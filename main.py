@@ -1,238 +1,346 @@
-"""Truss Learning App — interactive tutorial and quiz."""
+"""Truss Learning App — Streamlit web interface."""
 
-import sys
 import random
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
-from rich.prompt import Prompt, IntPrompt
-from rich.text import Text
-from rich import box
-
+import streamlit as st
 from questions import TUTORIALS, QUESTIONS
 
-console = Console()
+st.set_page_config(page_title="Truss Learning App", page_icon="🔺", layout="wide")
+
+# ── Session state defaults ────────────────────────────────────────────────────
+
+def _init_state():
+    defaults = {
+        "page": "home",
+        "tutorial_idx": 0,
+        "quiz_pool": None,
+        "quiz_idx": 0,
+        "quiz_score": 0,
+        "quiz_wrong": [],
+        "quiz_answered": False,
+        "quiz_selected": None,
+        "quiz_topic": None,
+    }
+    for k, v in defaults.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
+
+_init_state()
 
 
-def clear():
-    console.clear()
+def go(page, **kwargs):
+    st.session_state.page = page
+    for k, v in kwargs.items():
+        st.session_state[k] = v
+    st.rerun()
 
 
-def press_enter(msg="Press [bold]Enter[/bold] to continue..."):
-    console.print(f"\n[dim]{msg}[/dim]")
-    input()
+# ── Sidebar nav ───────────────────────────────────────────────────────────────
+
+with st.sidebar:
+    st.title("🔺 Truss Learning")
+    st.divider()
+    if st.button("🏠 Home", use_container_width=True):
+        go("home")
+    if st.button("📖 Tutorials", use_container_width=True):
+        go("tutorials")
+    if st.button("📝 Quiz", use_container_width=True):
+        go("quiz_menu")
+    if st.button("📋 Reference Card", use_container_width=True):
+        go("reference")
+    st.divider()
+    st.caption("Structural analysis fundamentals")
 
 
-# ── Tutorial ────────────────────────────────────────────────────────────────
+# ── Home ──────────────────────────────────────────────────────────────────────
 
-def run_tutorial():
-    clear()
-    console.print(Panel("[bold cyan]TRUSS LEARNING — TUTORIALS[/bold cyan]",
-                        subtitle="Learn at your own pace", border_style="cyan"))
+def page_home():
+    st.title("🔺 Truss Learning App")
+    st.subheader("Structural analysis fundamentals")
+    st.write("")
 
-    for i, t in enumerate(TUTORIALS, 1):
-        console.print(f"  [bold]{i}.[/bold] {t['title']}")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.info("### 📖 Tutorials\nLearn truss concepts step by step — from basics to analysis methods.")
+        if st.button("Start Tutorials", use_container_width=True):
+            go("tutorials")
+    with col2:
+        st.success("### 📝 Quiz\nTest your knowledge with 13 questions across 5 topics.")
+        if st.button("Take a Quiz", use_container_width=True):
+            go("quiz_menu")
+    with col3:
+        st.warning("### 📋 Reference Card\nKey formulas and zero-force-member rules at a glance.")
+        if st.button("View Reference", use_container_width=True):
+            go("reference")
 
-    console.print("  [bold]0.[/bold] Back to main menu\n")
+    st.divider()
+    st.markdown("""
+**Topics covered:**
+- What is a truss? (members, joints, assumptions)
+- Types of trusses (Pratt, Warren, Howe, K-Truss, Fink)
+- Method of Joints — step-by-step analysis
+- Method of Sections — cutting plane technique
+- Determinacy & Stability — m + r = 2j
+""")
 
-    while True:
-        choice = Prompt.ask("[cyan]Select a topic[/cyan]",
-                            choices=[str(i) for i in range(len(TUTORIALS) + 1)],
-                            show_choices=False)
-        if choice == "0":
-            return
-        idx = int(choice) - 1
-        show_tutorial(idx)
 
+# ── Tutorials ─────────────────────────────────────────────────────────────────
 
-def show_tutorial(idx: int):
+def page_tutorials():
+    st.title("📖 Tutorials")
+
+    # Topic selector in sidebar area — use radio
+    topics = [t["title"] for t in TUTORIALS]
+    idx = st.session_state.tutorial_idx
+
+    selected = st.radio("Select a topic:", topics, index=idx, key="tutorial_radio")
+    new_idx = topics.index(selected)
+    if new_idx != idx:
+        st.session_state.tutorial_idx = new_idx
+        idx = new_idx
+
+    st.divider()
+
     t = TUTORIALS[idx]
-    clear()
-    console.print(Panel(
-        f"[bold white]{t['title']}[/bold white]",
-        border_style="cyan",
-        subtitle=f"Topic {idx + 1} of {len(TUTORIALS)}",
-    ))
-    console.print()
-    console.print(t["content"])
+    st.subheader(f"{idx + 1}. {t['title']}")
+    st.caption(f"Topic {idx + 1} of {len(TUTORIALS)}")
 
-    nav = []
-    if idx > 0:
-        nav.append("[bold]P[/bold]revious")
-    if idx < len(TUTORIALS) - 1:
-        nav.append("[bold]N[/bold]ext")
-    nav.append("[bold]M[/bold]enu")
-    console.print(f"\n[dim]{'  |  '.join(nav)}[/dim]")
+    # Strip Rich markup tags for plain display
+    import re
+    content = re.sub(r'\[/?[^\]]+\]', '', t["content"])
+    st.markdown(content)
 
-    while True:
-        key = Prompt.ask("", default="n" if idx < len(TUTORIALS) - 1 else "m",
-                         show_default=False).strip().lower()
-        if key in ("n", "") and idx < len(TUTORIALS) - 1:
-            show_tutorial(idx + 1)
-            return
-        elif key == "p" and idx > 0:
-            show_tutorial(idx - 1)
-            return
-        elif key == "m":
-            return
+    st.divider()
+    col_prev, col_next = st.columns([1, 1])
+    with col_prev:
+        if idx > 0:
+            if st.button("← Previous", use_container_width=True):
+                st.session_state.tutorial_idx = idx - 1
+                st.rerun()
+    with col_next:
+        if idx < len(TUTORIALS) - 1:
+            if st.button("Next →", use_container_width=True):
+                st.session_state.tutorial_idx = idx + 1
+                st.rerun()
 
 
-# ── Quiz ─────────────────────────────────────────────────────────────────────
+# ── Quiz menu ─────────────────────────────────────────────────────────────────
 
-def run_quiz():
-    clear()
-    console.print(Panel("[bold yellow]TRUSS QUIZ[/bold yellow]",
-                        subtitle="Test your knowledge", border_style="yellow"))
+def page_quiz_menu():
+    st.title("📝 Quiz")
+    st.write("Choose a quiz mode to get started.")
+    st.write("")
 
     topics = sorted({q["topic"] for q in QUESTIONS})
-    console.print("\n[bold]Choose a quiz mode:[/bold]")
-    console.print("  [bold]1.[/bold] Full quiz (all topics)")
-    for i, t in enumerate(topics, 2):
-        console.print(f"  [bold]{i}.[/bold] {t} only")
-    console.print("  [bold]0.[/bold] Back\n")
 
-    choices = [str(i) for i in range(len(topics) + 2)]
-    choice = Prompt.ask("[yellow]Select[/yellow]", choices=choices, show_choices=False)
-    if choice == "0":
-        return
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        mode = st.radio("Quiz mode:", ["All topics"] + topics)
 
-    if choice == "1":
-        pool = QUESTIONS[:]
-    else:
-        topic = topics[int(choice) - 2]
-        pool = [q for q in QUESTIONS if q["topic"] == topic]
-
-    random.shuffle(pool)
-    administer_quiz(pool)
-
-
-def administer_quiz(pool: list):
-    score = 0
-    wrong = []
-
-    for num, q in enumerate(pool, 1):
-        clear()
-        console.print(Panel(
-            f"[bold]Question {num} of {len(pool)}[/bold]  —  Topic: [cyan]{q['topic']}[/cyan]",
-            border_style="yellow",
-        ))
-        console.print(f"\n[bold white]{q['question']}[/bold white]\n")
-
-        for i, opt in enumerate(q["options"], 1):
-            console.print(f"  [bold]{i}.[/bold] {opt}")
-
-        console.print()
-        valid = [str(i) for i in range(1, len(q["options"]) + 1)]
-        choice = Prompt.ask("[yellow]Your answer[/yellow]", choices=valid, show_choices=False)
-        selected = int(choice) - 1
-
-        if selected == q["answer"]:
-            score += 1
-            console.print("\n[bold green]✓ Correct![/bold green]")
+    with col2:
+        topic_counts = {t: sum(1 for q in QUESTIONS if q["topic"] == t) for t in topics}
+        total = len(QUESTIONS)
+        if mode == "All topics":
+            st.metric("Questions", total)
+            st.caption("Covers: " + ", ".join(topics))
         else:
-            correct_text = q["options"][q["answer"]]
-            console.print(f"\n[bold red]✗ Incorrect.[/bold red]  "
-                          f"The correct answer was: [green]{correct_text}[/green]")
-            wrong.append(q)
+            st.metric("Questions", topic_counts[mode])
+            st.caption(f"Topic: {mode}")
 
-        console.print(f"\n[dim italic]{q['explanation']}[/dim italic]")
-        press_enter()
+    st.write("")
+    if st.button("▶ Start Quiz", type="primary", use_container_width=False):
+        if mode == "All topics":
+            pool = QUESTIONS[:]
+        else:
+            pool = [q for q in QUESTIONS if q["topic"] == mode]
+        random.shuffle(pool)
+        st.session_state.quiz_pool = pool
+        st.session_state.quiz_idx = 0
+        st.session_state.quiz_score = 0
+        st.session_state.quiz_wrong = []
+        st.session_state.quiz_answered = False
+        st.session_state.quiz_selected = None
+        st.session_state.quiz_topic = mode
+        go("quiz_question")
 
-    show_results(score, len(pool), wrong)
+
+# ── Quiz question ─────────────────────────────────────────────────────────────
+
+def page_quiz_question():
+    pool = st.session_state.quiz_pool
+    idx = st.session_state.quiz_idx
+
+    if idx >= len(pool):
+        go("quiz_results")
+
+    q = pool[idx]
+    answered = st.session_state.quiz_answered
+    selected = st.session_state.quiz_selected
+
+    # Progress
+    progress = (idx) / len(pool)
+    st.progress(progress, text=f"Question {idx + 1} of {len(pool)}  —  Score: {st.session_state.quiz_score}/{idx}")
+
+    st.subheader(f"Q{idx + 1}. {q['question']}")
+    st.caption(f"Topic: {q['topic']}")
+    st.write("")
+
+    # Answer buttons
+    for i, opt in enumerate(q["options"]):
+        if answered:
+            if i == q["answer"]:
+                st.success(f"✓  {opt}")
+            elif i == selected:
+                st.error(f"✗  {opt}")
+            else:
+                st.button(opt, key=f"opt_{i}", disabled=True)
+        else:
+            if st.button(opt, key=f"opt_{i}", use_container_width=True):
+                st.session_state.quiz_selected = i
+                st.session_state.quiz_answered = True
+                if i == q["answer"]:
+                    st.session_state.quiz_score += 1
+                else:
+                    st.session_state.quiz_wrong.append(q)
+                st.rerun()
+
+    # Feedback
+    if answered:
+        st.write("")
+        if selected == q["answer"]:
+            st.success("**Correct!**")
+        else:
+            st.error(f"**Incorrect.** The correct answer was: _{q['options'][q['answer']]}_")
+        st.info(f"💡 {q['explanation']}")
+        st.write("")
+        if st.button("Next Question →" if idx + 1 < len(pool) else "See Results →", type="primary"):
+            st.session_state.quiz_idx = idx + 1
+            st.session_state.quiz_answered = False
+            st.session_state.quiz_selected = None
+            st.rerun()
 
 
-def show_results(score: int, total: int, wrong: list):
-    clear()
+# ── Quiz results ──────────────────────────────────────────────────────────────
+
+def page_quiz_results():
+    score = st.session_state.quiz_score
+    total = len(st.session_state.quiz_pool)
+    wrong = st.session_state.quiz_wrong
     pct = score / total * 100
-    color = "green" if pct >= 75 else "yellow" if pct >= 50 else "red"
 
-    console.print(Panel(
-        f"[bold {color}]{score} / {total}  ({pct:.0f}%)[/bold {color}]",
-        title="[bold]Quiz Complete[/bold]",
-        border_style=color,
-    ))
+    st.title("📊 Quiz Results")
 
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Score", f"{score} / {total}")
+    col2.metric("Percentage", f"{pct:.0f}%")
+    col3.metric("Incorrect", len(wrong))
+
+    st.progress(score / total)
+
+    st.write("")
     if pct == 100:
-        console.print("\n[bold green]Perfect score! Outstanding work.[/bold green]")
+        st.success("🎉 Perfect score! Outstanding work.")
     elif pct >= 75:
-        console.print("\n[bold green]Great job! Keep reviewing the topics you missed.[/bold green]")
+        st.success("👍 Great job! Review the topics you missed.")
     elif pct >= 50:
-        console.print("\n[bold yellow]Good effort. Review the tutorials on the topics below.[/bold yellow]")
+        st.warning("📚 Good effort. Work through the tutorials on the topics below.")
     else:
-        console.print("\n[bold red]More study needed. Work through the tutorials and try again.[/bold red]")
+        st.error("🔁 More study needed. Review the tutorials and try again.")
 
     if wrong:
-        console.print("\n[bold]Topics to review:[/bold]")
+        st.write("")
+        st.subheader("Topics to review:")
         reviewed = set()
         for q in wrong:
             if q["topic"] not in reviewed:
-                console.print(f"  • [cyan]{q['topic']}[/cyan]")
+                st.write(f"- **{q['topic']}**")
                 reviewed.add(q["topic"])
 
-    press_enter("Press Enter to return to the main menu...")
+    st.write("")
+    col_retry, col_menu, col_tutorials = st.columns(3)
+    with col_retry:
+        if st.button("🔁 Retry same quiz", use_container_width=True):
+            pool = st.session_state.quiz_pool[:]
+            random.shuffle(pool)
+            st.session_state.quiz_pool = pool
+            st.session_state.quiz_idx = 0
+            st.session_state.quiz_score = 0
+            st.session_state.quiz_wrong = []
+            st.session_state.quiz_answered = False
+            st.session_state.quiz_selected = None
+            go("quiz_question")
+    with col_menu:
+        if st.button("📝 New quiz", use_container_width=True):
+            go("quiz_menu")
+    with col_tutorials:
+        if st.button("📖 Go to tutorials", use_container_width=True):
+            go("tutorials")
 
 
-# ── Reference Card ───────────────────────────────────────────────────────────
+# ── Reference card ────────────────────────────────────────────────────────────
 
-def show_reference():
-    clear()
-    table = Table(title="Quick Reference — Truss Analysis", box=box.ROUNDED,
-                  border_style="blue", header_style="bold cyan")
-    table.add_column("Formula / Rule", style="bold white")
-    table.add_column("Meaning", style="white")
+def page_reference():
+    st.title("📋 Quick Reference Card")
+    st.caption("Key formulas and rules for planar truss analysis")
+    st.write("")
 
-    rows = [
-        ("m + r = 2j", "Statically determinate planar truss"),
-        ("m + r < 2j", "Unstable (mechanism)"),
-        ("m + r > 2j", "Statically indeterminate"),
-        ("ΣFx = 0, ΣFy = 0", "Equilibrium at each joint (Method of Joints)"),
-        ("ΣFx=0, ΣFy=0, ΣM=0", "Equilibrium of cut section (Method of Sections)"),
-        ("Cut ≤ 3 unknowns", "Limit for Method of Sections"),
-        ("Negative force value", "Member is in compression (when tension assumed)"),
-        ("2-member joint, no load", "Both members are zero-force"),
-        ("3-member joint, 2 collinear,\nno external load", "Third member is zero-force"),
-    ]
-    for r, m in rows:
-        table.add_row(r, m)
+    st.subheader("Determinacy")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("""
+| Condition | Classification |
+|-----------|---------------|
+| m + r = 2j | Statically determinate ✓ |
+| m + r < 2j | Unstable (mechanism) ✗ |
+| m + r > 2j | Statically indeterminate |
+""")
+    with col2:
+        st.info("**Variables**\n\nm = number of members\n\nr = number of external reaction components\n\nj = number of joints")
 
-    console.print(table)
-    press_enter()
+    st.subheader("Method of Joints")
+    st.markdown("""
+| Rule | Detail |
+|------|--------|
+| Equilibrium equations | ΣFx = 0,  ΣFy = 0 per joint |
+| Starting joint | At most **2 unknown members** |
+| Sign convention | Assume tension; negative result → compression |
+| Zero-force (2 members, no load, non-collinear) | Both members are zero-force |
+| Zero-force (3 members, 2 collinear, no load) | Third member is zero-force |
+""")
 
+    st.subheader("Method of Sections")
+    st.markdown("""
+| Rule | Detail |
+|------|--------|
+| Equilibrium equations | ΣFx = 0,  ΣFy = 0,  ΣM = 0 for cut section |
+| Maximum cut members | **3 unknowns** per cut |
+| Best moment point | Intersection of the other two unknown forces |
+| Best use case | Finding force in one or a few specific members quickly |
+""")
 
-# ── Main Menu ─────────────────────────────────────────────────────────────────
-
-def main_menu():
-    while True:
-        clear()
-        console.print(Panel(
-            "[bold cyan]TRUSS LEARNING APP[/bold cyan]\n"
-            "[dim]Structural analysis fundamentals[/dim]",
-            border_style="cyan",
-            padding=(1, 4),
-        ))
-        console.print("  [bold]1.[/bold] Tutorials")
-        console.print("  [bold]2.[/bold] Quiz")
-        console.print("  [bold]3.[/bold] Quick Reference Card")
-        console.print("  [bold]0.[/bold] Exit\n")
-
-        choice = Prompt.ask("[cyan]Select[/cyan]",
-                            choices=["0", "1", "2", "3"],
-                            show_choices=False)
-        if choice == "1":
-            run_tutorial()
-        elif choice == "2":
-            run_quiz()
-        elif choice == "3":
-            show_reference()
-        elif choice == "0":
-            clear()
-            console.print("[bold cyan]Goodbye! Keep learning.[/bold cyan]\n")
-            sys.exit(0)
+    st.subheader("Truss Types at a Glance")
+    st.markdown("""
+| Type | Key Feature | Diagonals under typical load |
+|------|-------------|------------------------------|
+| Pratt | Verticals in compression | Tension |
+| Howe | Verticals in tension | Compression |
+| Warren | No verticals | Alternating T/C |
+| K-Truss | Diagonals meet vertical at mid-height | Long-span bridges |
+| Fink | V-shaped sub-triangles | Common in roofs |
+""")
 
 
-if __name__ == "__main__":
-    try:
-        main_menu()
-    except (KeyboardInterrupt, EOFError):
-        console.print("\n[dim]Exited.[/dim]")
-        sys.exit(0)
+# ── Router ────────────────────────────────────────────────────────────────────
+
+page = st.session_state.page
+if page == "home":
+    page_home()
+elif page == "tutorials":
+    page_tutorials()
+elif page == "quiz_menu":
+    page_quiz_menu()
+elif page == "quiz_question":
+    page_quiz_question()
+elif page == "quiz_results":
+    page_quiz_results()
+elif page == "reference":
+    page_reference()

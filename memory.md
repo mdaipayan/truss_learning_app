@@ -40,7 +40,8 @@ The app teaches:
 
 ### Key file responsibilities
 
-- main.py: page configuration, global CSS, navigation, tutorial rendering, app pages.
+- main.py: page configuration, global CSS, navigation, tutorial rendering, app pages and live-state integration for Home.
+- home.py: reusable responsive landing dashboard with hero CTA, live gamification metrics, module cards, scoped CSS and injected router callback.
 - questions.py: tutorial content and quiz question bank.
 - game.py: progress, XP, levels, achievements, progress load/save.
 - diagrams.py: static Matplotlib diagrams.
@@ -71,6 +72,11 @@ The app teaches:
 - [x] Added formula cards for determinacy and sizing optimization.
 - [x] Added a responsive Streamlit chart configuration and main-content CSS for narrow viewports.
 - [x] Added Plotly to requirements.txt.
+- [x] Added a modular home.py dashboard with hero CTAs, progress metrics, an XP bar and four module-navigation cards.
+- [x] Integrated Home into main.py using current XP/level/quiz streak/achievement data and the existing route callback.
+- [x] Added home.py scoped card hover styling and a mobile breakpoint that stacks the dashboard columns.
+- [x] Added tests/test_home.py for default values, live-state overrides, normalization and route mapping.
+- [x] Raised the Streamlit lower bound to 1.41.0 for keyed-container CSS scoping.
 
 ### Automated verification
 - [x] Added unit tests covering the two counting indices.
@@ -136,7 +142,7 @@ These are known limitations, not necessarily bugs:
 
 Current requirements.txt declarations:
 
-    streamlit>=1.35.0
+    streamlit>=1.41.0
     matplotlib>=3.8.0
     numpy>=1.24.0
     pandas>=2.0.0
@@ -184,3 +190,11 @@ Append a dated entry with:
 - CI run URL and exact head SHA.
 - Remaining risks, known regressions and rollback reference.
 - Deployment status, only if deployment was actually performed.
+
+
+### 2026-10-18 — Modular Home dashboard
+- Added home.py with an injectable navigation callback, hero CTA, live progress cards, XP bar and four feature cards.
+- Updated main.py to supply progress from game state and route buttons through the existing go() function.
+- Added tests/test_home.py and raised the Streamlit minimum version to 1.41.0 for keyed container CSS classes.
+- Mobile/desktop visual verification is not complete; automated CI status for the final commit should be checked before release.
+- No merge or deployment performed.

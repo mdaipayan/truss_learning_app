@@ -7,13 +7,17 @@ import learn
 class LearnPageTests(unittest.TestCase):
     def test_first_topic_is_interactive_triangular_truss(self):
         fig = learn.make_topic_figure(0)
-        # Three member traces plus the node trace.
-        self.assertEqual(len(fig.data), 4)
+        # Member, support and node traces remain individually inspectable.
         labels = [trace.name for trace in fig.data]
         self.assertIn("Bottom Chord", labels)
         self.assertIn("Left Rafter / Top Chord", labels)
         self.assertIn("Right Rafter / Top Chord", labels)
-        self.assertIn("x = %{customdata[1]:.2f} m", fig.data[-1].hovertemplate)
+        self.assertIn("Supports", labels)
+        joints = next(trace for trace in fig.data if trace.name == "Joints")
+        self.assertIn("x = %{customdata[1]:.2f} m", joints.hovertemplate)
+        annotation_texts = [str(item.text) for item in fig.layout.annotations]
+        for label in ("P", "Ay", "Ax", "By", "4.0 m span"):
+            self.assertTrue(any(label in item for item in annotation_texts), label)
 
     def test_every_existing_tutorial_has_a_plotly_figure(self):
         for index in range(6):
@@ -22,6 +26,31 @@ class LearnPageTests(unittest.TestCase):
                 self.assertGreater(len(fig.data), 0)
                 self.assertTrue(fig.layout.autosize)
                 self.assertGreater(fig.layout.height, 0)
+
+
+    def test_truss_types_have_clear_panel_headings(self):
+        fig = learn.make_topic_figure(1)
+        texts = [str(item.text) for item in fig.layout.annotations]
+        for heading in ("Pratt truss", "Warren truss", "Howe truss"):
+            self.assertTrue(any(heading in item for item in texts), heading)
+
+    def test_joint_method_includes_a_free_body_diagram(self):
+        fig = learn._joints_fbd_figure()
+        texts = [str(item.text) for item in fig.layout.annotations]
+        for label in ("Ax", "Ay", "F_AB (T)", "F_AE (T)"):
+            self.assertTrue(any(label in item for item in texts), label)
+
+    def test_section_cut_marks_three_unknown_member_forces(self):
+        fig = learn.make_topic_figure(3)
+        texts = [str(item.text) for item in fig.layout.annotations]
+        for label in ("Section cut", "F₁", "F₂", "F₃"):
+            self.assertTrue(any(label in item for item in texts), label)
+
+    def test_determinacy_diagram_compares_all_three_cases(self):
+        fig = learn.make_topic_figure(4)
+        texts = [str(item.text) for item in fig.layout.annotations]
+        for heading in ("DETERMINATE", "INDETERMINATE", "UNSTABLE"):
+            self.assertTrue(any(heading in item for item in texts), heading)
 
     def test_determinacy_and_optimization_formulas_are_latex_renderable(self):
         self.assertIn(

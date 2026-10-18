@@ -1,6 +1,6 @@
 """Truss Learning App — gamified, light-theme Streamlit UI."""
 
-import random, re
+import random, re, uuid
 import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
@@ -145,8 +145,11 @@ html, body, [data-testid="stAppViewContainer"] {
 # ── Session-state init ────────────────────────────────────────────────────────
 
 def _init():
+    # A random session key prevents different browser sessions from sharing progress.
+    if "session_save_id" not in st.session_state:
+        st.session_state.session_save_id = uuid.uuid4().hex
     if "gs" not in st.session_state:
-        st.session_state.gs = game.load()
+        st.session_state.gs = game.load(st.session_state.session_save_id)
     defaults = {
         "page":          "home",
         "tut_idx":       0,
@@ -188,7 +191,10 @@ def gs():
 
 
 def _save():
-    game.save(st.session_state.gs)
+    try:
+        game.save(st.session_state.gs, st.session_state.session_save_id)
+    except OSError:
+        st.error("Progress could not be saved. Please notify the instructor or administrator.")
 
 
 def _strip(text):
@@ -597,7 +603,7 @@ where $c = \cos\theta$, $s = \sin\theta$. The DOF order is $[u_i,\, v_i,\, u_j,\
             for md in res["member_data"]:
                 st.markdown(f"**Member {md['member']}** — angle {md['angle']}°,  "
                             f"c = {md['c']},  s = {md['s']}")
-                df = dsm_solver.element_ke_df(md["ke"] / 1000.0, md["dofs"])
+                df = dsm_solver.element_ke_df(md["ke"] / res["EA_L"], md["dofs"])
                 st.caption(f"kₑ / k  (DOFs: {md['dofs']})")
                 st.dataframe(df, use_container_width=False)
 
@@ -606,7 +612,7 @@ where $c = \cos\theta$, $s = \sin\theta$. The DOF order is $[u_i,\, v_i,\, u_j,\
                 "Each element's 4×4 matrix is scattered into the 6×6 global **K** "
                 "at the rows/columns corresponding to the element's DOFs."
             )
-            df_K = dsm_solver.k_matrix_df(res["K"] / 1000.0)
+            df_K = dsm_solver.k_matrix_df(res["K"] / res["EA_L"])
             st.caption("Global K / k  (6×6)")
             st.dataframe(df_K, use_container_width=False)
 
@@ -616,7 +622,7 @@ where $c = \cos\theta$, $s = \sin\theta$. The DOF order is $[u_i,\, v_i,\, u_j,\
                 "Delete the corresponding rows and columns to get the **reduced system**:"
             )
             df_Kred = pd.DataFrame(
-                res["K_red"] / 1000.0,
+                res["K_red"] / res["EA_L"],
                 index=["u₃", "v₃"], columns=["u₃", "v₃"]
             ).round(3)
             st.caption("K_reduced / k")
@@ -791,6 +797,9 @@ def _handle_answer(sel, q):
         st.session_state.streak = 0
     if st.session_state.streak > g["best_streak"]:
         g["best_streak"] = st.session_state.streak
+    # Unlock streak milestones as soon as they are achieved, even if the quiz ends later.
+    new_a = game.check_achievements(g, st.session_state.streak, None, None)
+    st.session_state.toasts.extend(new_a)
     _save()
 
 
@@ -803,7 +812,9 @@ def _finish_quiz():
             st.balloons()
     new_a = game.check_achievements(
         g, st.session_state.streak,
-        st.session_state.quiz_topic, len(st.session_state.quiz_pool))
+        st.session_state.quiz_topic, len(st.session_state.quiz_pool),
+        current_correct=st.session_state.quiz_score,
+        current_total=len(st.session_state.quiz_pool))
     st.session_state.toasts.extend(new_a)
     _save()
 

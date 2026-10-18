@@ -2,6 +2,7 @@
 import unittest
 
 import learn
+from questions import QUESTIONS, TUTORIALS
 
 
 class LearnPageTests(unittest.TestCase):
@@ -20,7 +21,7 @@ class LearnPageTests(unittest.TestCase):
             self.assertTrue(any(label in item for item in annotation_texts), label)
 
     def test_every_existing_tutorial_has_a_plotly_figure(self):
-        for index in range(6):
+        for index in range(9):
             with self.subTest(index=index):
                 fig = learn.make_topic_figure(index)
                 self.assertGreater(len(fig.data), 0)
@@ -51,6 +52,63 @@ class LearnPageTests(unittest.TestCase):
         texts = [str(item.text) for item in fig.layout.annotations]
         for heading in ("DETERMINATE", "INDETERMINATE", "UNSTABLE"):
             self.assertTrue(any(heading in item for item in texts), heading)
+
+
+    def test_three_uploaded_study_note_topics_are_appended(self):
+        titles = [item["title"] for item in TUTORIALS]
+        self.assertEqual(len(TUTORIALS), 9)
+        for title in (
+            "Determinate Truss: Force, Stress and Displacement",
+            "Indeterminate Triangle: Redundant Reaction",
+            "Internal Redundancy: Force Method",
+        ):
+            self.assertIn(title, titles)
+        new_topics = {
+            "Determinate vs Indeterminate",
+            "Indeterminate Triangle",
+            "Force Method",
+        }
+        self.assertTrue(new_topics.issubset({item["topic"] for item in QUESTIONS}))
+
+    def test_indeterminate_triangle_area_cases_match_uploaded_notes(self):
+        equal = learn._small_indeterminate_response([1000, 1000, 1000])
+        self.assertAlmostEqual(equal["R"], -16.6666667, places=5)
+        self.assertAlmostEqual(equal["N_AB"], 3.3333333, places=5)
+        self.assertAlmostEqual(equal["N_AC"], -17.5, places=5)
+        self.assertAlmostEqual(equal["N_BC"], -4.1666667, places=5)
+
+        larger_bc = learn._small_indeterminate_response([1000, 1000, 2000])
+        self.assertAlmostEqual(larger_bc["R"], -15.30944, places=3)
+        self.assertAlmostEqual(larger_bc["N_AB"], 4.69056, places=3)
+        self.assertLess(larger_bc["N_AC"], equal["N_AC"])
+
+    def test_new_diagrams_use_uploaded_geometries_and_labels(self):
+        determinate = learn.make_topic_figure(6)
+        texts = [str(item.text) for item in determinate.layout.annotations]
+        self.assertTrue(any("Px = 20 kN" in item for item in texts))
+        self.assertTrue(any("AB: 20 kN tension" in item for item in texts))
+
+        redundant_triangle = learn.make_topic_figure(7)
+        texts = [str(item.text) for item in redundant_triangle.layout.annotations]
+        self.assertTrue(any("R = Cx" in item for item in texts))
+        self.assertTrue(any("m + r − 2j = 1" in item for item in texts))
+
+        double_diagonal = learn.make_topic_figure(8)
+        labels = [trace.name for trace in double_diagonal.data]
+        self.assertTrue(any("BD — selected redundant" in label for label in labels))
+        self.assertGreater(len(double_diagonal.layout.shapes), 0)
+
+    def test_force_method_arithmetic_discrepancy_is_not_silently_hidden(self):
+        # Listed terms in the uploaded PDF sum to 12,280 mm, not the printed 13,400 mm.
+        total = (
+            0.8**2 * 4000 + 0.6**2 * 3000
+            + 0.8**2 * 4000 + 0.6**2 * 3000 + 1.0**2 * 5000
+        )
+        self.assertEqual(total, 12280)
+        lesson = next(item for item in TUTORIALS
+                      if item["title"] == "Internal Redundancy: Force Method")
+        self.assertIn("12280", lesson["content"])
+        self.assertIn("instructor verification", lesson["content"])
 
     def test_determinacy_and_optimization_formulas_are_latex_renderable(self):
         self.assertIn(

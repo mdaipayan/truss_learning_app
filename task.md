@@ -45,6 +45,11 @@ Use this checklist as the implementation roadmap for the AI coding assistant. Ch
 
 ## Phase 3 — Responsive UI and accessibility
 
+- [x] Extract the Learn/tutorials page into reusable learn.py with injected navigation and completion callbacks.
+- [x] Add six interactive Plotly tutorial diagrams, including a hoverable triangular roof truss.
+- [x] Render key determinacy, equilibrium and optimization formulas with st.latex.
+- [x] Preserve XP/persistence ownership in main.py and retain the optimization lab as the sixth topic's extra renderer.
+- [x] Add tests for topic diagrams, hover metadata, formula definitions, and responsive CSS.
 - [x] Extract the Home dashboard into reusable home.py with an injected navigation callback and live progress data.
 - [x] Add the hero CTA, gamification metrics, XP progress bar, four module cards, and scoped card/hover CSS.
 - [x] Add unit tests for Home defaults, live progress normalization, safe metric values and route mapping.

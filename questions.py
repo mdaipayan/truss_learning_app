@@ -149,6 +149,94 @@ or code compliance. Its sizes are not for direct use in a real structure.""",
     },
 ]
 
+
+    {
+        "title": "Determinate Truss: Force, Stress and Displacement",
+        "content": """This lesson follows the uploaded study notes on a three-member 3–4–5 plane truss.
+
+[bold cyan]Model and loading[/bold cyan]
+A = (0, 0), B = (4, 0) and C = (0, 3) m. Members are AB = 4 m, AC = 3 m and BC = 5 m. A is a pin, B is a vertical roller, and joint C carries Px = 20 kN to the right and Py = 20 kN downward.
+
+[bold cyan]Step 1 — support reactions[/bold cyan]
+Taking moments about A gives 4By − (20)(3) = 0, so By = 15 kN. Vertical equilibrium gives Ay = 5 kN. Horizontal equilibrium gives Ax = −20 kN, so the horizontal reaction acts to the left.
+
+[bold cyan]Step 2 — member forces[/bold cyan]
+The study notes report AB = 20 kN tension, AC = 5 kN compression and BC = 25 kN compression. A negative member-force result means compression when tension was assumed positive.
+
+[bold cyan]Why area does not change ideal member force[/bold cyan]
+For the stated determinate, linearly static problem, equilibrium fixes member forces for prescribed geometry and loading. If A_AB changes from 1000 mm² to 500 mm², N_AB remains 20 kN, but stress rises from 20 MPa to 40 MPa.
+
+Key relationship:
+  • Force is determined by equilibrium in this ideal determinate case.
+  • Stress is force divided by area.
+  • Axial stiffness is EA/L, and displacement depends on NL/(EA).
+
+[bold cyan]Displacement check from the study notes[/bold cyan]
+For the stated example, the notes give vertical displacement at C as δ_Cv = 75/A_AC mm when A_AC is in mm². If the allowable vertical displacement is 1 mm, this expression requires A_AC ≥ 75 mm². This is an educational calculation under the stated assumptions, not a complete design check.
+
+[bold]Important qualification[/bold]
+The independence of member force from area applies to the usual ideal determinate truss under prescribed static loads. Imposed support movements, thermal strains and nonlinear effects require separate treatment.""",
+    },
+    {
+        "title": "Indeterminate Triangle: Redundant Reaction",
+        "content": """This worked example follows the uploaded notes for a three-member truss with one additional support reaction.
+
+[bold cyan]Geometry and supports[/bold cyan]
+A = (0, 0), B = (4, 0), C = (0, 3) m. Thus AB = 4 m, AC = 3 m and BC = 5 m. A is a pin; B is a vertical roller; C is a horizontal roller against a vertical guide. Joint C carries Px = 20 kN to the right and Py = 20 kN downward.
+
+[bold cyan]Step 1 — degree of indeterminacy[/bold cyan]
+There are m = 3 members, r = 4 reaction components and j = 3 joints. Therefore m + r − 2j = 3 + 4 − 6 = 1. The redundant is the horizontal reaction R = Cx.
+
+[bold cyan]Step 2 — equilibrium in terms of R[/bold cyan]
+Assuming member tension is positive, the study notes derive:
+  • NAB = 20 + R
+  • NAC = 0.75R − 5
+  • NBC = −1.25(20 + R)
+Equilibrium has reduced the problem to one unknown, but has not yet determined R.
+
+[bold cyan]Step 3 — compatibility at C[/bold cyan]
+The horizontal guide prevents horizontal movement, so u_C = 0. Remove R to form the primary determinate structure and apply a unit horizontal load at C. The virtual member forces are nAB = 1, nAC = 0.75 and nBC = −1.25.
+
+The unit-load equation is the sum of N_i n_i L_i/(E A_i) over the three members, set equal to zero. With a common E, the notes obtain:
+  R = −[(80000/A1) − (11250/A2) + (156250/A3)] / [(4000/A1) + (1687.5/A2) + (7812.5/A3)]
+where A1, A2 and A3 refer to AB, AC and BC respectively, in mm², and R is in kN.
+
+[bold cyan]Numerical cases from the notes[/bold cyan]
+Equal areas A1 = A2 = A3 = 1000 mm²: R = −16.667 kN; AB = 3.333 kN tension; AC = 17.500 kN compression; BC = 4.167 kN compression.
+
+Change only A3 to 2000 mm² while A1 = A2 = 1000 mm²: R ≈ −15.309 kN; AB ≈ 4.691 kN tension; AC ≈ 16.482 kN compression; BC ≈ 5.863 kN compression.
+
+[bold]Key insight[/bold]
+Changing one member area changes its stiffness EA/L, which changes the compatibility solution and redistributes the member forces. This differs from the ideal determinate example.""",
+    },
+    {
+        "title": "Internal Redundancy: Force Method",
+        "content": """This advanced worked example follows the uploaded notes for a rectangular truss with both diagonals.
+
+[bold cyan]Geometry and loading[/bold cyan]
+The rectangle has a 4 m span and 3 m height: AB = CD = 4 m, BC = DA = 3 m and AC = BD = 5 m. The supports are A (pin: Ax and Ay) and B (vertical roller: By). A downward load P = 10 kN acts at C.
+
+[bold cyan]Step 1 — count the redundancy[/bold cyan]
+There are m = 6 members, r = 3 reactions and j = 4 joints. For a stable truss, Ds = m + r − 2j = 6 + 3 − 8 = 1. The structure is first-degree statically indeterminate. Select diagonal BD as the internal redundant and define X = N_BD.
+
+[bold cyan]Step 2 — form the primary structure[/bold cyan]
+Temporarily remove BD. The remaining members are AB, BC, CD, DA and AC. The study notes report the primary forces as NBC⁽⁰⁾ = −10 kN and NAB⁽⁰⁾ = NCD⁽⁰⁾ = NDA⁽⁰⁾ = NAC⁽⁰⁾ = 0. Positive force denotes tension; negative denotes compression.
+
+[bold cyan]Step 3 — apply a unit load in the redundant direction[/bold cyan]
+The notes list the virtual member forces nAB = −0.8, nBC = −0.6, nCD = −0.8, nDA = −0.6 and nAC = 1 for the primary structure. The 3–4–5 diagonal has horizontal and vertical direction ratios 4/5 and 3/5.
+
+[bold cyan]Step 4 — compatibility and force recovery[/bold cyan]
+For the primary members, the force-method expression uses flexibility terms L_i/(E A_i). The actual member forces are recovered from N_i = N_i⁽⁰⁾ + X n_i. Member areas therefore enter through stiffness and flexibility, and changes in area can alter the redundant force and the resulting force distribution.
+
+[bold]Instructor arithmetic check — verify before grading[/bold]
+The uploaded notes report a denominator of 13400/(EA) and X = −1.3433 kN for equal material and equal areas. However, the five displayed primary-member terms using the listed lengths and virtual forces sum to 0.64(4000) + 0.36(3000) + 0.64(4000) + 0.36(3000) + 1²(5000) = 12280, not 13400. The source example also states δ_BD = 0; the compatibility statement should explicitly clarify how relative joint displacement along BD is matched to the deformation of the restored redundant member. Treat the reported numeric result as requiring instructor verification rather than as a verified answer.
+
+[bold cyan]Connection to optimization and glass-box learning[/bold cyan]
+Minimum-weight design may minimize W = ρg Σ A_i L_i subject to stress and displacement limits. In an indeterminate truss, N_i depends on the area vector A, so the causal chain is area → stiffness EA/L → compatibility → redundant force → member forces → stress and displacement.
+
+Students should be able to inspect the selected redundant, primary forces, unit-load forces, flexibility terms, compatibility equation, force recovery and the way area changes the response.""",
+    },
+
 QUESTIONS = [
     # Topic: Basics
     {

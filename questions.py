@@ -138,8 +138,10 @@ incorrect supports can make a truss unstable even when m + r = 2j.
 
 [bold cyan]4. Try the interactive experiment below[/bold cyan]
 Compare a five-member determinate layout with the same layout plus member CD.
-The lab shows the determinacy count, force redistribution as area changes, and
-the minimum-volume design under identical axial-stress and displacement limits.
+The crossed diagonals AD and BC pass one another without a pin joint at their
+intersection in this idealized connectivity. The lab shows the determinacy count,
+force redistribution as area changes, and the minimum-volume design under
+identical axial-stress and displacement limits.
 
 [bold]Important scope note:[/bold] the lab is an educational linear-elastic model.
 It does not check member buckling, connections, fabrication, load combinations,

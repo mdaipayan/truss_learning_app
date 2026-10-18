@@ -206,6 +206,15 @@ st.markdown("""
         min-height: 44px !important;
         white-space: nowrap !important;
     }
+    .main [role="radiogroup"] {
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+    .main [role="radiogroup"] label {
+        max-width: 100% !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+    }
 }
 </style>
 """, unsafe_allow_html=True)

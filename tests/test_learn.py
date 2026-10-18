@@ -80,7 +80,7 @@ class LearnPageTests(unittest.TestCase):
         larger_bc = learn._small_indeterminate_response([1000, 1000, 2000])
         self.assertAlmostEqual(larger_bc["R"], -15.30944, places=3)
         self.assertAlmostEqual(larger_bc["N_AB"], 4.69056, places=3)
-        self.assertLess(larger_bc["N_AC"], equal["N_AC"])
+        self.assertGreater(larger_bc["N_AC"], equal["N_AC"])  # less compression magnitude
 
     def test_new_diagrams_use_uploaded_geometries_and_labels(self):
         determinate = learn.make_topic_figure(6)

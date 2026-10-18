@@ -142,6 +142,7 @@ def _add_member(
     start: str, end: str, label: str, *,
     color: str = "#1e3a5f", width: float = 3.5, dash: str = "solid",
 ) -> None:
+    """Add a labelled structural member with a useful hover target."""
     x1, y1 = nodes[start]
     x2, y2 = nodes[end]
     fig.add_trace(go.Scatter(
@@ -156,15 +157,20 @@ def _add_member(
     ))
 
 
-def _add_nodes(fig: go.Figure, nodes: Mapping[str, tuple[float, float]],
-               highlight: str | None = None) -> None:
+def _add_nodes(
+    fig: go.Figure,
+    nodes: Mapping[str, tuple[float, float]],
+    highlight: str | None = None,
+) -> None:
+    """Draw crisp joints with hover coordinates and readable labels."""
     names = list(nodes)
     fig.add_trace(go.Scatter(
         x=[nodes[name][0] for name in names],
         y=[nodes[name][1] for name in names],
         mode="markers+text", text=names, textposition="top center",
+        textfont={"size": 11, "color": "#0f172a", "family": "Arial, sans-serif"},
         marker={
-            "size": [14 if name == highlight else 10 for name in names],
+            "size": [15 if name == highlight else 10 for name in names],
             "color": ["#f59e0b" if name == highlight else "#2563eb" for name in names],
             "line": {"color": "#ffffff", "width": 1.5},
         },
@@ -174,148 +180,449 @@ def _add_nodes(fig: go.Figure, nodes: Mapping[str, tuple[float, float]],
             "x = %{customdata[1]:.2f} m<br>"
             "y = %{customdata[2]:.2f} m<extra></extra>"
         ),
-        showlegend=False,
+        name="Joints", showlegend=False,
     ))
 
 
-def _layout(fig: go.Figure, title: str, *, height: int = 370) -> go.Figure:
+def _add_supports(
+    fig: go.Figure,
+    nodes: Mapping[str, tuple[float, float]],
+    support_names: Sequence[str],
+) -> None:
+    """Add schematic pin/roller symbols and ground hatching below support joints."""
+    if not support_names:
+        return
+    fig.add_trace(go.Scatter(
+        x=[nodes[name][0] for name in support_names],
+        y=[nodes[name][1] - 0.17 for name in support_names],
+        mode="markers",
+        marker={
+            "symbol": "triangle-up", "size": 19, "color": "#475569",
+            "line": {"color": "#ffffff", "width": 1},
+        },
+        name="Supports", showlegend=False, hoverinfo="skip",
+    ))
+    for name in support_names:
+        x, y = nodes[name]
+        ground_y = y - 0.38
+        fig.add_shape(
+            type="line", x0=x - 0.28, y0=ground_y,
+            x1=x + 0.28, y1=ground_y,
+            line={"color": "#475569", "width": 2},
+        )
+        for tick in range(5):
+            x0 = x - 0.22 + tick * 0.11
+            fig.add_shape(
+                type="line", x0=x0, y0=ground_y,
+                x1=x0 - 0.09, y1=ground_y - 0.10,
+                line={"color": "#64748b", "width": 1},
+            )
+
+
+def _add_force_arrow(
+    fig: go.Figure,
+    start: tuple[float, float],
+    end: tuple[float, float],
+    label: str,
+    *,
+    color: str = "#92400e",
+    label_position: tuple[float, float] | None = None,
+    width: float = 2.2,
+) -> None:
+    """Draw a vector arrow and place its label independently to avoid overlap."""
+    fig.add_annotation(
+        x=end[0], y=end[1], ax=start[0], ay=start[1],
+        xref="x", yref="y", axref="x", ayref="y",
+        text="", showarrow=True, arrowhead=3, arrowsize=1.15,
+        arrowwidth=width, arrowcolor=color,
+    )
+    if label:
+        lx, ly = label_position or (
+            (start[0] + end[0]) / 2 + 0.12,
+            (start[1] + end[1]) / 2 + 0.12,
+        )
+        fig.add_annotation(
+            x=lx, y=ly, text=f"<b>{label}</b>", showarrow=False,
+            font={"size": 11, "color": color},
+            bgcolor="rgba(255,255,255,0.92)", borderpad=1,
+        )
+
+
+def _add_dimension(
+    fig: go.Figure, x1: float, x2: float, y: float, label: str,
+) -> None:
+    fig.add_shape(
+        type="line", x0=x1, y0=0, x1=x1, y1=y,
+        line={"color": "#94a3b8", "width": 1, "dash": "dot"},
+    )
+    fig.add_shape(
+        type="line", x0=x2, y0=0, x1=x2, y1=y,
+        line={"color": "#94a3b8", "width": 1, "dash": "dot"},
+    )
+    fig.add_annotation(
+        x=x2, y=y, ax=x1, ay=y, xref="x", yref="y", axref="x", ayref="y",
+        text="", showarrow=True, arrowhead=2, arrowside="end+start",
+        arrowwidth=1.3, arrowcolor="#64748b",
+    )
+    fig.add_annotation(
+        x=(x1 + x2) / 2, y=y - 0.13, text=label, showarrow=False,
+        font={"size": 10, "color": "#475569"},
+        bgcolor="rgba(255,255,255,0.92)", borderpad=1,
+    )
+
+
+def _layout(
+    fig: go.Figure,
+    title: str,
+    *,
+    height: int = 390,
+    x_range: tuple[float, float] | None = None,
+    y_range: tuple[float, float] | None = None,
+    equal_scale: bool = True,
+) -> go.Figure:
+    """Consistent white technical drawing canvas with axes hidden."""
     fig.update_layout(
-        title={"text": title, "x": 0.02, "xanchor": "left"},
+        title={"text": f"<b>{title}</b>", "x": 0.02, "xanchor": "left",
+               "font": {"size": 16, "color": "#0f172a"}},
         autosize=True, height=height,
-        margin={"l": 20, "r": 20, "t": 48, "b": 24},
+        margin={"l": 8, "r": 8, "t": 52, "b": 8},
         paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
         font={"family": "Inter, Arial, sans-serif", "size": 12, "color": "#0f172a"},
         hoverlabel={"bgcolor": "#ffffff", "font_size": 13},
         showlegend=False,
     )
-    fig.update_xaxes(title="x (m)", showgrid=True, gridcolor="#eef2f7",
-                     zeroline=False, automargin=True)
-    fig.update_yaxes(title="y (m)", showgrid=True, gridcolor="#eef2f7",
-                     zeroline=False, automargin=True, scaleanchor="x", scaleratio=1)
+    fig.update_xaxes(
+        visible=False, showgrid=False, zeroline=False, fixedrange=True,
+        range=list(x_range) if x_range else None,
+    )
+    fig.update_yaxes(
+        visible=False, showgrid=False, zeroline=False, fixedrange=True,
+        range=list(y_range) if y_range else None,
+    )
+    if equal_scale:
+        fig.update_yaxes(scaleanchor="x", scaleratio=1)
     return fig
 
 
 def _basic_figure() -> go.Figure:
-    """Topic 1: a triangular roof truss with node-coordinate and member hover."""
+    """Topic 1: an annotated roof truss with supports, loads, reactions and span."""
     fig = go.Figure()
+    nodes = BASIC_NODES
     for start, end, label in BASIC_MEMBERS:
-        _add_member(fig, BASIC_NODES, start, end, label)
-    _add_nodes(fig, BASIC_NODES)
+        _add_member(fig, nodes, start, end, label, width=4.0)
+    _add_supports(fig, nodes, ("A", "B"))
+    _add_nodes(fig, nodes)
+    _add_force_arrow(fig, (2.0, 3.05), (2.0, 2.48), "P",
+                     label_position=(2.20, 2.82), color="#92400e")
+    _add_force_arrow(fig, (0.0, 0.0), (0.0, 0.63), "Ay",
+                     label_position=(-0.23, 0.43), color="#6d28d9")
+    _add_force_arrow(fig, (0.0, 0.0), (0.62, 0.0), "Ax",
+                     label_position=(0.40, 0.19), color="#6d28d9")
+    _add_force_arrow(fig, (4.0, 0.0), (4.0, 0.63), "By",
+                     label_position=(4.22, 0.43), color="#6d28d9")
     fig.add_annotation(
-        x=2, y=-0.25, text="4.0 m span", showarrow=False,
-        font={"size": 11, "color": "#64748b"},
+        x=0.0, y=-0.57, text="<b>PIN</b>", showarrow=False,
+        font={"size": 9, "color": "#475569"},
     )
     fig.add_annotation(
-        x=2.0, y=1.65, ax=2.0, ay=2.1, axref="x", ayref="y",
-        text="Roof apex C", showarrow=True, arrowhead=2,
-        arrowcolor="#b45309", font={"size": 10, "color": "#92400e"},
+        x=4.0, y=-0.57, text="<b>ROLLER</b>", showarrow=False,
+        font={"size": 9, "color": "#475569"},
     )
-    return _layout(fig, "Explore a simple triangular roof truss")
+    _add_dimension(fig, 0.0, 4.0, -0.83, "4.0 m span")
+    return _layout(
+        fig, "Simple triangular roof truss", height=430,
+        x_range=(-0.75, 4.75), y_range=(-1.18, 3.32),
+    )
 
 
 def _types_figure() -> go.Figure:
-    """Topic 2: hoverable Pratt, Warren and Howe schematic topologies on one plot."""
+    """Topic 2: compact Pratt, Warren and Howe layouts with distinct load paths."""
     fig = go.Figure()
-    schemes = [
-        ("Pratt", 0.0, [(0,0),(1,0),(2,0),(3,0),(0,1),(1,1),(2,1),(3,1)],
-         [(0,1),(1,2),(2,3),(4,5),(5,6),(6,7),(0,4),(1,5),(2,6),(3,7),(0,5),(2,7)]),
-        ("Warren", 4.4, [(0,0),(1,0),(2,0),(3,0),(.5,1),(1.5,1),(2.5,1)],
-         [(0,1),(1,2),(2,3),(0,4),(4,1),(1,5),(5,2),(2,6),(6,3)]),
-        ("Howe", 8.8, [(0,0),(1,0),(2,0),(3,0),(0,1),(1,1),(2,1),(3,1)],
-         [(0,1),(1,2),(2,3),(4,5),(5,6),(6,7),(0,4),(1,5),(2,6),(3,7),(1,4),(3,6)]),
-    ]
-    for title, x_offset, points, members in schemes:
-        names = [f"{title[0]}{i+1}" for i in range(len(points))]
-        nodes = {name: (x + x_offset, y) for name, (x, y) in zip(names, points)}
-        for i, j in members:
-            _add_member(fig, nodes, names[i], names[j],
-                        f"{title} member {names[i]}–{names[j]}", width=2.4)
+    offset_pratt, offset_warren, offset_howe = 0.0, 4.35, 8.70
+
+    def add_chord(nodes: Mapping[str, tuple[float, float]], names: Sequence[str],
+                  label: str, color: str = "#1e3a5f") -> None:
+        for left, right in zip(names, names[1:]):
+            _add_member(fig, nodes, left, right, f"{label}: {left}-{right}",
+                        color=color, width=2.6)
+
+    def add_panel(title: str, offset: float, kind: str) -> None:
+        bottom = [(offset + i, 0.0) for i in range(4)]
+        top = [(offset + i, 0.55) for i in range(4)]
+        if kind == "Warren":
+            top = [(offset + 0.5, 0.55), (offset + 1.5, 0.55),
+                   (offset + 2.5, 0.55)]
+            names = [f"W{i}" for i in range(4)] + [f"WT{i}" for i in range(3)]
+            points = bottom + top
+            nodes = {name: point for name, point in zip(names, points)}
+            bottom_names = names[:4]
+            upper_names = names[4:]
+            add_chord(nodes, bottom_names, "Bottom chord")
+            zigzag = [
+                (bottom_names[0], upper_names[0]), (upper_names[0], bottom_names[1]),
+                (bottom_names[1], upper_names[1]), (upper_names[1], bottom_names[2]),
+                (bottom_names[2], upper_names[2]), (upper_names[2], bottom_names[3]),
+            ]
+            for a, b in zigzag:
+                _add_member(fig, nodes, a, b, f"Warren diagonal {a}-{b}",
+                            color="#d97706", width=2.8)
+            _add_supports(fig, nodes, (bottom_names[0], bottom_names[-1]))
+        else:
+            nodes = {
+                **{f"{kind}B{i}": point for i, point in enumerate(bottom)},
+                **{f"{kind}T{i}": point for i, point in enumerate(top)},
+            }
+            b_names = [f"{kind}B{i}" for i in range(4)]
+            t_names = [f"{kind}T{i}" for i in range(4)]
+            add_chord(nodes, b_names, "Bottom chord")
+            add_chord(nodes, t_names, "Top chord")
+            for i in range(4):
+                _add_member(fig, nodes, b_names[i], t_names[i], f"Vertical {i+1}",
+                            color="#64748b", width=2.2)
+            for i in range(3):
+                if kind == "Pratt":
+                    a, b = t_names[i], b_names[i + 1]
+                    diag_color = "#15803d"
+                else:
+                    a, b = b_names[i], t_names[i + 1]
+                    diag_color = "#b91c1c"
+                _add_member(fig, nodes, a, b, f"{kind} diagonal {a}-{b}",
+                            color=diag_color, width=2.8)
+            _add_supports(fig, nodes, (b_names[0], b_names[-1]))
         _add_nodes(fig, nodes)
-        fig.add_annotation(x=x_offset + 1.5, y=1.35, text=f"<b>{title}</b>",
-                           showarrow=False, font={"size": 12, "color": "#1d4ed8"})
-    fig.update_layout(
-        title={"text": "Compare common planar truss layouts", "x": 0.02},
-        autosize=True, height=330, margin={"l": 10, "r": 10, "t": 48, "b": 10},
-        paper_bgcolor="#fff", plot_bgcolor="#fff",
-        font={"family": "Inter, Arial, sans-serif", "size": 11, "color": "#0f172a"},
-        hoverlabel={"bgcolor": "#fff", "font_size": 12}, showlegend=False,
+        fig.add_annotation(
+            x=offset + 1.5, y=1.13, text=f"<b>{title} truss</b>",
+            showarrow=False, font={"size": 12, "color": "#1d4ed8"},
+        )
+        note = {
+            "Pratt": "Diagonals highlighted green",
+            "Warren": "Alternating triangular web",
+            "Howe": "Opposite diagonal direction",
+        }[title]
+        fig.add_annotation(
+            x=offset + 1.5, y=-0.48, text=note, showarrow=False,
+            font={"size": 9, "color": "#475569"},
+        )
+
+    add_panel("Pratt", offset_pratt, "Pratt")
+    add_panel("Warren", offset_warren, "Warren")
+    add_panel("Howe", offset_howe, "Howe")
+    return _layout(
+        fig, "Compare common planar truss configurations", height=365,
+        x_range=(-0.55, 12.95), y_range=(-0.62, 1.38), equal_scale=False,
     )
-    fig.update_xaxes(visible=False, range=[-0.6, 12.5])
-    fig.update_yaxes(visible=False, range=[-0.3, 1.7], scaleanchor="x", scaleratio=0.38)
-    return fig
 
 
 def _joints_figure() -> go.Figure:
+    """Topic 3: a multi-panel truss highlighting the start joint for analysis."""
+    nodes = {
+        "A": (0.0, 0.0), "B": (1.5, 0.0), "C": (3.0, 0.0), "D": (4.5, 0.0),
+        "E": (0.0, 0.78), "F": (1.5, 0.78), "G": (3.0, 0.78), "H": (4.5, 0.78),
+    }
+    members = [
+        ("A", "B", "Bottom chord AB"), ("B", "C", "Bottom chord BC"),
+        ("C", "D", "Bottom chord CD"), ("E", "F", "Top chord EF"),
+        ("F", "G", "Top chord FG"), ("G", "H", "Top chord GH"),
+        ("A", "E", "Vertical AE"), ("B", "F", "Vertical BF"),
+        ("C", "G", "Vertical CG"), ("D", "H", "Vertical DH"),
+        ("E", "B", "Diagonal EB"), ("F", "C", "Diagonal FC"),
+        ("G", "D", "Diagonal GD"),
+    ]
     fig = go.Figure()
-    for start, end, label in BASIC_MEMBERS:
-        _add_member(fig, BASIC_NODES, start, end, label,
-                    color="#f59e0b" if "A" in (start, end) else "#1e3a5f",
-                    width=4.5)
-    _add_nodes(fig, BASIC_NODES, highlight="A")
+    for start, end, label in members:
+        _add_member(
+            fig, nodes, start, end, label,
+            color="#f59e0b" if "A" in (start, end) else "#1e3a5f",
+            width=3.8 if "A" in (start, end) else 2.5,
+        )
+    _add_supports(fig, nodes, ("A", "D"))
+    _add_nodes(fig, nodes, highlight="A")
+    _add_force_arrow(fig, (1.5, 1.45), (1.5, 0.95), "P₁",
+                     label_position=(1.76, 1.26))
+    _add_force_arrow(fig, (3.0, 1.45), (3.0, 0.95), "P₂",
+                     label_position=(3.25, 1.26))
+    _add_force_arrow(fig, (0.0, 0.0), (0.0, 0.48), "Ay",
+                     label_position=(-0.22, 0.31), color="#6d28d9")
+    _add_force_arrow(fig, (4.5, 0.0), (4.5, 0.48), "Dy",
+                     label_position=(4.72, 0.31), color="#6d28d9")
     fig.add_annotation(
-        x=.75, y=.75, ax=0, ay=0, axref="x", ayref="y",
-        text="Start at a joint with<br>at most 2 unknowns",
-        showarrow=True, arrowhead=2, bgcolor="#fffbeb",
-        bordercolor="#f59e0b", borderpad=4,
-        font={"size": 10, "color": "#92400e"},
+        x=2.2, y=1.72,
+        text="<b>Start at a joint with two or fewer unknowns</b>",
+        showarrow=False, font={"size": 10, "color": "#92400e"},
+        bgcolor="#fffbeb", bordercolor="#f59e0b", borderpad=4,
     )
-    return _layout(fig, "Method of Joints — start at joint A")
+    return _layout(
+        fig, "Method of Joints — identify a solvable joint", height=390,
+        x_range=(-0.7, 5.4), y_range=(-0.75, 2.0), equal_scale=False,
+    )
+
+
+def _joints_fbd_figure() -> go.Figure:
+    """Free-body diagram: all assumed force vectors act away from joint A."""
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=[0], y=[0], mode="markers+text", text=["A"],
+        textposition="middle center",
+        textfont={"size": 13, "color": "#0f172a"},
+        marker={"size": 24, "color": "#fef3c7",
+                "line": {"color": "#f59e0b", "width": 2}},
+        name="Joint A", hovertemplate="<b>Joint A</b><extra></extra>",
+    ))
+    _add_force_arrow(fig, (0, 0), (-1.2, 0), "Ax",
+                     label_position=(-0.75, 0.22), color="#6d28d9")
+    _add_force_arrow(fig, (0, 0), (0, 1.05), "Ay",
+                     label_position=(0.22, 0.75), color="#6d28d9")
+    _add_force_arrow(fig, (0, 0), (1.25, 0), "F_AB (T)",
+                     label_position=(0.78, 0.24), color="#15803d")
+    _add_force_arrow(fig, (0, 0), (0.85, 0.78), "F_AE (T)",
+                     label_position=(1.15, 0.79), color="#15803d")
+    fig.add_annotation(
+        x=0.0, y=-0.55, text="Assume tension: member forces pull away from the joint.",
+        showarrow=False, font={"size": 10, "color": "#475569"},
+    )
+    return _layout(
+        fig, "Free-body diagram of joint A", height=285,
+        x_range=(-1.75, 1.9), y_range=(-0.85, 1.45),
+    )
 
 
 def _sections_figure() -> go.Figure:
-    nodes = {"A":(0,0),"B":(1,0),"C":(2,0),"D":(3,0),
-             "E":(0,1),"F":(1,1),"G":(2,1),"H":(3,1)}
-    members = [
-        ("A","B","Bottom chord"),("B","C","Bottom chord"),("C","D","Bottom chord"),
-        ("E","F","Top chord"),("F","G","Top chord"),("G","H","Top chord"),
-        ("A","E","Vertical"),("B","F","Vertical"),("C","G","Vertical"),("D","H","Vertical"),
-        ("A","F","Diagonal"),("B","G","Diagonal"),("C","H","Diagonal"),
-    ]
-    cut = {("B","C"),("F","G"),("B","G")}
+    """Topic 4: a section cut crosses three highlighted unknown member forces."""
+    nodes = {
+        "A": (0.0, 0.0), "B": (1.0, 0.0), "C": (2.0, 0.0),
+        "D": (3.0, 0.0), "E": (4.0, 0.0),
+        "F": (0.0, 1.0), "G": (1.0, 1.0), "H": (2.0, 1.0),
+        "I": (3.0, 1.0), "J": (4.0, 1.0),
+    }
+    members: list[tuple[str, str, str]] = []
+    members.extend((a, b, "Bottom chord") for a, b in zip(("A","B","C","D"), ("B","C","D","E")))
+    members.extend((a, b, "Top chord") for a, b in zip(("F","G","H","I"), ("G","H","I","J")))
+    members.extend((a, b, "Vertical") for a, b in (("A","F"),("B","G"),("C","H"),("D","I"),("E","J")))
+    members.extend((a, b, "Diagonal") for a, b in (("A","G"),("B","H"),("C","I"),("D","J")))
+    cut_pairs = {("B", "C"), ("G", "H"), ("B", "H")}
     fig = go.Figure()
-    for start, end, label in members:
-        is_cut = (start, end) in cut
-        _add_member(fig, nodes, start, end, f"{label} {start}{end}",
-                    color="#dc2626" if is_cut else "#1e3a5f",
-                    width=4.5 if is_cut else 2.4)
+    for start, end, member_type in members:
+        key = (start, end)
+        reverse_key = (end, start)
+        on_cut = key in cut_pairs or reverse_key in cut_pairs
+        right_side = nodes[start][0] > 1.5 and nodes[end][0] > 1.5
+        color = "#dc2626" if on_cut else "#cbd5e1" if right_side else (
+            "#64748b" if member_type == "Vertical" else "#1e3a5f"
+        )
+        _add_member(
+            fig, nodes, start, end, f"{member_type}: {start}-{end}",
+            color=color, width=4.0 if on_cut else 2.5,
+        )
+    _add_supports(fig, nodes, ("A", "E"))
     _add_nodes(fig, nodes)
-    fig.add_shape(type="line", x0=1.5, y0=-.2, x1=1.5, y1=1.2,
-                  line={"color":"#dc2626","width":2,"dash":"dash"})
-    fig.add_annotation(x=1.5, y=1.3, text="Section cut", showarrow=False,
-                       font={"size":11,"color":"#b91c1c"})
-    return _layout(fig, "Method of Sections — isolate a few unknowns")
+    _add_force_arrow(fig, (2.0, 1.7), (2.0, 1.18), "P",
+                     label_position=(2.2, 1.48))
+    _add_force_arrow(fig, (0.0, 0.0), (0.0, 0.44), "Ay",
+                     label_position=(-0.2, 0.28), color="#6d28d9")
+    _add_force_arrow(fig, (4.0, 0.0), (4.0, 0.44), "Ey",
+                     label_position=(4.2, 0.28), color="#6d28d9")
+    fig.add_shape(
+        type="line", x0=1.5, y0=-0.12, x1=1.5, y1=1.25,
+        line={"color": "#dc2626", "width": 2, "dash": "dash"},
+    )
+    fig.add_annotation(
+        x=1.5, y=1.37, text="<b>Section cut</b>", showarrow=False,
+        font={"size": 10, "color": "#b91c1c"},
+    )
+    for x, y, label in ((1.5, 1.08, "F₁"), (1.65, 0.49, "F₂"), (1.5, -0.18, "F₃")):
+        fig.add_annotation(
+            x=x, y=y, text=f"<b>{label}</b>", showarrow=False,
+            font={"size": 10, "color": "#b91c1c"},
+            bgcolor="rgba(255,255,255,0.95)", bordercolor="#fecaca", borderpad=2,
+        )
+    fig.add_annotation(
+        x=0.45, y=1.48, text="Analyse the left section",
+        showarrow=False, font={"size": 10, "color": "#1e3a5f"},
+        bgcolor="#eff6ff", bordercolor="#bfdbfe", borderpad=3,
+    )
+    return _layout(
+        fig, "Method of Sections — cut through at most three unknowns",
+        height=430, x_range=(-0.65, 4.7), y_range=(-0.78, 2.0),
+    )
 
 
 def _determinacy_figure() -> go.Figure:
+    """Topic 5: compare stable determinate, redundant and unstable topologies."""
     fig = go.Figure()
-    for start, end, label in BASIC_MEMBERS:
-        _add_member(fig, BASIC_NODES, start, end, label)
-    _add_nodes(fig, BASIC_NODES)
-    fig.add_annotation(
-        x=5.05, y=1.0, text="m = 3 members<br>r = 3 reactions<br>j = 3 joints<br><b>m + r = 2j</b>",
-        showarrow=False, align="left", bgcolor="#eff6ff",
-        bordercolor="#93c5fd", borderpad=7,
-        font={"size":12,"color":"#1e3a8a"},
+    cases = [
+        (0.0, "DETERMINATE", "#15803d", "One diagonal", "m + r = 2j"),
+        (3.0, "INDETERMINATE", "#b45309", "Two diagonals", "m + r > 2j"),
+        (6.0, "UNSTABLE", "#b91c1c", "No diagonal", "m + r < 2j"),
+    ]
+    for offset, title, color, subtitle, formula in cases:
+        nodes = {
+            "A": (offset, 0.0), "B": (offset + 2.0, 0.0),
+            "C": (offset + 2.0, 0.45), "D": (offset, 0.45),
+        }
+        for start, end, label in (
+            ("A","B","Bottom chord"), ("B","C","Right vertical"),
+            ("C","D","Top chord"), ("D","A","Left vertical"),
+        ):
+            _add_member(fig, nodes, start, end, f"{title}: {label}", width=2.7)
+        if title != "UNSTABLE":
+            _add_member(fig, nodes, "A", "C", f"{title}: diagonal AC",
+                        color=color, width=3.3)
+        if title == "INDETERMINATE":
+            _add_member(fig, nodes, "B", "D", "Redundant diagonal BD",
+                        color="#d97706", width=3.3)
+        _add_supports(fig, nodes, ("A", "B"))
+        _add_nodes(fig, {f"{name}{int(offset)}": point for name, point in nodes.items()})
+        fig.add_annotation(
+            x=offset + 1.0, y=1.23,
+            text=f"<b>{title}</b><br>{formula}<br>{subtitle}",
+            showarrow=False, align="center",
+            font={"size": 10, "color": color},
+            bgcolor="#ffffff", bordercolor=color, borderpad=4,
+        )
+    return _layout(
+        fig, "Static determinacy is a count — stability still matters",
+        height=425, x_range=(-0.55, 8.55), y_range=(-0.64, 1.85),
+        equal_scale=False,
     )
-    fig.update_xaxes(range=[-.5, 6.8])
-    return _layout(fig, "Count members, reactions and joints")
 
 
 def _optimization_figure() -> go.Figure:
-    nodes = {"A":(0.0,0.0),"B":(4.0,0.0),"C":(1.2,3.0),"D":(2.8,3.0)}
+    """Topic 6: sizing-design topology with the added redundant member emphasized."""
+    nodes = {
+        "A": (0.0, 0.0), "B": (4.0, 0.0),
+        "C": (1.2, 1.45), "D": (2.8, 1.45),
+    }
     members = [
-        ("A","B","AB — bottom chord"),("A","C","AC — diagonal"),
-        ("B","C","BC — diagonal"),("A","D","AD — diagonal"),
-        ("B","D","BD — diagonal"),("C","D","CD — added top chord"),
+        ("A", "B", "AB — bottom chord"),
+        ("A", "C", "AC — diagonal"),
+        ("B", "C", "BC — diagonal"),
+        ("A", "D", "AD — diagonal"),
+        ("B", "D", "BD — diagonal"),
+        ("C", "D", "CD — added redundant member"),
     ]
     fig = go.Figure()
     for start, end, label in members:
         added = (start, end) == ("C", "D")
-        _add_member(fig, nodes, start, end, label,
-                    color="#dc2626" if added else "#1e3a5f",
-                    width=5.0 if added else 3.0)
+        _add_member(
+            fig, nodes, start, end, label,
+            color="#dc2626" if added else "#1e3a5f",
+            width=5.0 if added else 3.0,
+        )
+    _add_supports(fig, nodes, ("A", "B"))
     _add_nodes(fig, nodes)
-    return _layout(fig, "Optimization topology — added member CD in red")
+    _add_force_arrow(fig, (1.2, 2.18), (1.2, 1.70), "P₁",
+                     label_position=(1.42, 2.00))
+    _add_force_arrow(fig, (2.8, 2.18), (2.8, 1.70), "P₂",
+                     label_position=(3.02, 2.00))
+    fig.add_annotation(
+        x=2.0, y=0.93, text="<b>CD: added load path</b>",
+        showarrow=False, font={"size": 10, "color": "#b91c1c"},
+        bgcolor="#fff1f2", bordercolor="#fda4af", borderpad=3,
+    )
+    return _layout(
+        fig, "Optimization topology — added member CD in red", height=415,
+        x_range=(-0.7, 4.7), y_range=(-0.8, 2.55),
+    )
 
 
 def make_topic_figure(index: int) -> go.Figure:

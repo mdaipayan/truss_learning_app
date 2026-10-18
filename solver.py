@@ -155,8 +155,8 @@ STEPS = [
                 "id":    "FCB",
                 "label": "Force in member CB — find **F_CB** (kN, + = tension)",
                 "eq":    (
-                    "ΣFx = 0 :   F_CB  +  F_BD × cos 135°  =  0\n"
-                    "            F_CB  +  (−28.28)×(−0.707) =  0   ⟹  F_CB = ?"
+                    "ΣFx = 0 :   -F_CB  +  F_BD × cos 135°  =  0\n"
+                    "            -F_CB + (−28.28)×(−0.707) =  0   ⟹  F_CB = ?"
                 ),
                 "hint":  "cos 135° = −0.707, so the x-component of F_BD is positive.",
                 "ans":   20.0,

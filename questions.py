@@ -233,6 +233,35 @@ Minimum-weight design may minimize W = ρg Σ A_i L_i subject to stress and disp
 
 Students should be able to inspect the selected redundant, primary forces, unit-load forces, flexibility terms, compatibility equation, force recovery and the way area changes the response.""",
     },
+
+    {
+        "title": "Parallel Bars: Compatibility and Load Sharing",
+        "content": """This small model from the uploaded study notes makes the role of compatibility easy to see before solving a full indeterminate truss.
+
+[bold cyan]Model[/bold cyan]
+Two axial bars support one rigid plate. Their axial forces are F1 and F2, and the external load is P = 100 kN. The plate remains compatible, so the vertical displacement of both attachment points is equal.
+
+[bold cyan]Step 1 — equilibrium[/bold cyan]
+Vertical force balance gives F1 + F2 = P. For P = 100 kN, this is one equation with two unknown member forces. Equilibrium alone cannot tell us how the load is shared.
+
+[bold cyan]Step 2 — compatibility[/bold cyan]
+The rigid plate imposes δ1 = δ2. Using δ = FL/(EA), the compatibility equation is F1L1/(E1A1) = F2L2/(E2A2). Rearranging gives F1/F2 = k1/k2, where k = EA/L.
+
+[bold cyan]Step 3 — equal material and equal length[/bold cyan]
+If both bars have the same E and L, then F1/F2 = A1/A2. The member with the larger area is stiffer and attracts a larger share of the applied load in this parallel-bar model.
+
+[bold cyan]Numerical load sharing from the notes[/bold cyan]
+For P = 100 kN and A1 = 1000 mm²:
+  • If A2 = 2000 mm², F1 = 33.33 kN and F2 = 66.67 kN.
+  • If A2 = 4000 mm², F1 = 20 kN and F2 = 80 kN.
+
+[bold]Core student insight[/bold]
+For the ideal determinate truss, equilibrium generally fixes member forces under prescribed static loading. For a load-sharing system with redundant force paths, equilibrium must be combined with compatibility and stiffness. The parallel-bar model is a simple illustration of why area can affect load distribution in an indeterminate structure.
+
+[bold cyan]Connection to glass-box optimization[/bold cyan]
+A learning tool should let students change A1 and A2, inspect the stiffness ratio, see F1 and F2 update, and verify that their sum remains P. That same inspectable causal logic extends to truss optimization: area → stiffness → compatibility/load sharing → member force → stress and displacement.""",
+    },
+
 ]
 
 QUESTIONS = [
@@ -525,5 +554,18 @@ QUESTIONS = [
         ],
         "answer": 0,
         "explanation": "The listed n²L terms sum to 12,280 mm, not the 13,400 mm reported in the notes. The compatibility statement also needs a clear convention for the restored redundant member, so the numerical result requires instructor verification.",
+    },
+
+    {
+        "topic": "Compatibility and Load Sharing",
+        "question": "Two axial bars with equal E and equal L share P = 100 kN through a rigid plate. If A1 = 1000 mm² and A2 = 2000 mm², what load sharing follows?",
+        "options": [
+            "F1 = 50 kN, F2 = 50 kN",
+            "F1 ≈ 33.33 kN, F2 ≈ 66.67 kN",
+            "F1 = 80 kN, F2 = 20 kN",
+            "F1 = 100 kN, F2 = 0 kN",
+        ],
+        "answer": 1,
+        "explanation": "Compatibility gives F1/F2 = k1/k2 = A1/A2 = 1/2 for equal material and length. Together with F1+F2=100 kN, this gives F1≈33.33 kN and F2≈66.67 kN.",
     },
 ]

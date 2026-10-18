@@ -507,6 +507,65 @@ def diagram_solver_state(highlight_joint=None, known_forces=None,
     return fig
 
 
+# ── Determinacy and truss optimization ─────────────────────────────────────────
+
+def diagram_determinacy_optimization():
+    """Compare a stable determinate plane truss with a one-member-redundant variant."""
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.8))
+    fig.patch.set_facecolor(C_BG)
+
+    nodes = {
+        "A": np.array([0.0, 0.0]),
+        "B": np.array([4.0, 0.0]),
+        "C": np.array([1.2, 3.0]),
+        "D": np.array([2.8, 3.0]),
+    }
+    base_members = [("A", "B"), ("A", "C"), ("B", "C"), ("A", "D"), ("B", "D")]
+
+    for panel, ax in enumerate(axes):
+        _ax_clean(ax)
+        for a, b in base_members:
+            _member(ax, nodes[a], nodes[b], color=C_MBR, lw=2.8)
+        if panel == 1:
+            # The extra top chord creates one redundant member for the same supports.
+            _member(ax, nodes["C"], nodes["D"], color=C_CMP, lw=3.8)
+            _force_label(ax, 2.0, 3.16, "Extra member CD", color=C_CMP)
+
+        _pin(ax, *nodes["A"], s=0.15)
+        _roller(ax, *nodes["B"], s=0.15)
+
+        for name, (x, y) in nodes.items():
+            _joint(ax, x, y, r=0.085)
+            label_off = (0.0, -0.35) if name in ("A", "B") else (0.0, 0.18)
+            ax.text(x + label_off[0], y + label_off[1], name,
+                    ha="center", va="center", fontsize=10, fontweight="bold",
+                    color="#0f172a", zorder=10)
+
+        _arrow(ax, 1.2, 3.85, 0, -0.60, label="P", lpad=(0.17, 0))
+        _arrow(ax, 2.8, 3.85, 0, -0.60, label="P", lpad=(0.17, 0))
+
+        if panel == 0:
+            title = "Determinate layout"
+            count = "m = 5, r = 3, j = 4\nm + r − 2j = 0"
+            box_color = "#dcfce7"
+            edge_color = "#16a34a"
+        else:
+            title = "Indeterminate by count"
+            count = "m = 6, r = 3, j = 4\nm + r − 2j = 1"
+            box_color = "#fee2e2"
+            edge_color = "#dc2626"
+        ax.text(2.0, -0.85, count, ha="center", va="center", fontsize=9,
+                color="#0f172a",
+                bbox=dict(boxstyle="round,pad=0.4", fc=box_color,
+                          ec=edge_color, lw=1.2))
+        ax.set_xlim(-0.65, 4.65)
+        ax.set_ylim(-1.35, 4.2)
+        ax.set_title(title, fontsize=12, fontweight="bold", color="#0f172a", pad=8)
+
+    plt.tight_layout(pad=1.4)
+    return fig
+
+
 # ── 7. DSM node/DOF diagram ───────────────────────────────────────────────────
 
 def diagram_dsm_nodes():

@@ -717,9 +717,19 @@ def render_learn(
                     config={"responsive": True, "displaylogo": False, "scrollZoom": False},
                     key=f"learn_plot_{index}",
                 )
+                if index == 2:
+                    # The joint-level free-body diagram complements the full truss
+                    # without squeezing both drawings into one small plotting area.
+                    st.plotly_chart(
+                        _joints_fbd_figure(),
+                        use_container_width=True,
+                        config={"responsive": True, "displaylogo": False, "scrollZoom": False},
+                        key="learn_joint_fbd",
+                    )
                 st.markdown(
                     '<div class="learn-muted">Hover over a joint for its x/y coordinates '
-                    'or over a member for its structural label.</div>',
+                    'or over a member for its structural label. Loads, reactions, '
+                    'supports and highlighted members are shown where relevant.</div>',
                     unsafe_allow_html=True,
                 )
 

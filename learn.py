@@ -368,12 +368,22 @@ def render_learn(
             unsafe_allow_html=True,
         )
 
-        selected = st.selectbox("Choose a topic", titles, index=index,
-                                key="learn_topic_selector")
-        selected_index = titles.index(selected)
-        if selected_index != index:
-            on_navigate(selected_index)
-            return
+        def _select_topic_changed() -> None:
+            """Route selector changes through the same parent-owned callback."""
+            selected_title = st.session_state.get("learn_topic_selector")
+            if selected_title in titles:
+                on_navigate(titles.index(selected_title))
+
+        selected = st.selectbox(
+            "Choose a topic",
+            titles,
+            index=index,
+            key="learn_topic_selector",
+            on_change=_select_topic_changed,
+        )
+        # Read the widget's current value; button callbacks synchronize this key
+        # before Streamlit reruns, so selection and displayed content cannot diverge.
+        index = titles.index(selected)
 
         tutorial = tutorials[index]
         title = titles[index]
@@ -425,12 +435,14 @@ def render_learn(
         st.divider()
         previous_col, complete_col, next_col = st.columns([1, 1.6, 1], gap="small")
         with previous_col:
-            if index > 0:
-                if st.button("← Previous", use_container_width=True, key="learn_previous"):
-                    on_navigate(index - 1)
-            else:
-                st.button("← Previous", disabled=True, use_container_width=True,
-                          key="learn_previous_disabled")
+            st.button(
+                "← Previous",
+                disabled=index == 0,
+                use_container_width=True,
+                key="learn_previous",
+                on_click=on_navigate if index > 0 else None,
+                args=(index - 1,) if index > 0 else (),
+            )
         with complete_col:
             if is_complete:
                 st.button("✅ Topic completed", disabled=True, use_container_width=True,
@@ -439,9 +451,11 @@ def render_learn(
                            use_container_width=True, key=f"learn_mark_{index}"):
                 on_mark_read(index)
         with next_col:
-            if index < len(tutorials) - 1:
-                if st.button("Next →", use_container_width=True, key="learn_next"):
-                    on_navigate(index + 1)
-            else:
-                st.button("Next →", disabled=True, use_container_width=True,
-                          key="learn_next_disabled")
+            st.button(
+                "Next →",
+                disabled=index >= len(tutorials) - 1,
+                use_container_width=True,
+                key="learn_next",
+                on_click=on_navigate if index < len(tutorials) - 1 else None,
+                args=(index + 1,) if index < len(tutorials) - 1 else (),
+            )

@@ -6,7 +6,7 @@ import numpy as np
 import streamlit as st
 import pandas as pd
 
-import game, diagrams, dsm_solver, home, optimization_lab, solver as slv
+import game, diagrams, dsm_solver, home, learn, optimization_lab, solver as slv
 from questions import TUTORIALS, QUESTIONS
 
 # ── Page config ───────────────────────────────────────────────────────────────
@@ -368,62 +368,44 @@ def page_home():
 
 # ── Tutorials ─────────────────────────────────────────────────────────────────
 
-def page_tutorials():
+def _mark_tutorial_read(idx: int):
+    """Award tutorial XP once, unlock achievements, persist, then rerun."""
     g = gs()
-    st.title("📖 Illustrated Tutorials")
+    if idx in g["tutorials_read"]:
+        st.toast("This topic is already complete.", icon="✅")
+        return
 
-    topics  = [t["title"] for t in TUTORIALS]
-    sel     = st.selectbox("Select topic:", topics,
-                           index=st.session_state.tut_idx)
-    idx     = topics.index(sel)
-    st.session_state.tut_idx = idx
+    g["tutorials_read"].append(idx)
+    old_level = game.get_level_index(g["xp"])
+    g["xp"] += 15
+    new_achievements = game.check_achievements(
+        g, st.session_state.streak, None, None
+    )
+    st.session_state.toasts.extend(new_achievements)
 
-    st.divider()
+    st.toast("15 XP Earned! 🏆", icon="🎉")
+    if game.get_level_index(g["xp"]) > old_level:
+        st.balloons()
+    _save()
+    st.rerun()
 
-    tut      = TUTORIALS[idx]
-    was_read = idx in g["tutorials_read"]
 
-    ch, cb = st.columns([5, 1])
-    with ch:
-        st.subheader(f"{idx+1}. {tut['title']}")
-        st.caption(f"Topic {idx+1} of {len(TUTORIALS)}")
-    with cb:
-        if was_read:
-            st.success("✅ Done")
-        else:
-            st.info("⭐ +15 XP")
+def _navigate_tutorial(idx: int):
+    """Update the selected tutorial and rerun the Learn page."""
+    st.session_state.tut_idx = max(0, min(int(idx), len(TUTORIALS) - 1))
+    st.rerun()
 
-    fig = DIAG_FNS[idx]()
-    st.pyplot(fig, use_container_width=True)
-    plt.close(fig)
 
-    st.markdown(_strip(tut["content"]))
-    if idx == 5:
-        optimization_lab.render_lab()
-    st.write("")
-
-    cp, cm, cn = st.columns([1, 2, 1])
-    with cp:
-        if idx > 0 and st.button("← Previous", use_container_width=True):
-            st.session_state.tut_idx = idx - 1;  st.rerun()
-    with cm:
-        if not was_read:
-            if st.button("📖 Mark as read (+15 XP)", type="primary",
-                         use_container_width=True):
-                g["tutorials_read"].append(idx)
-                old  = game.get_level_index(g["xp"])
-                g["xp"] += 15
-                new_a = game.check_achievements(g, st.session_state.streak, None, None)
-                st.session_state.toasts.extend(new_a)
-                if game.get_level_index(g["xp"]) > old:
-                    st.balloons()
-                _save();  st.rerun()
-        else:
-            st.button("✅ Already completed", disabled=True,
-                      use_container_width=True)
-    with cn:
-        if idx < len(TUTORIALS)-1 and st.button("Next →", use_container_width=True):
-            st.session_state.tut_idx = idx + 1;  st.rerun()
+def page_tutorials():
+    """Render the modular responsive Learn page."""
+    learn.render_learn(
+        tutorials=TUTORIALS,
+        current_index=st.session_state.tut_idx,
+        completed_indices=gs()["tutorials_read"],
+        on_mark_read=_mark_tutorial_read,
+        on_navigate=_navigate_tutorial,
+        extra_renderer=optimization_lab.render_lab,
+    )
 
 
 # ── Interactive Solver ────────────────────────────────────────────────────────

@@ -284,7 +284,7 @@ def diagram_method_joints():
     _arrow(ax2, ox, oy,  0.90,  0,    color=C_TEN, label="F_12 (T)", lpad=(0, 0.20))
     _arrow(ax2, ox, oy,  0.65,  0.65, color=C_TEN, label="F_1A (T)", lpad=(0.45, 0.12))
     _arrow(ax2, ox, oy,  0,    0.85, color=C_RXN, label="Ay ↑", lpad=(0.28, 0))
-    _arrow(ax2, ox, oy, -0.80, 0,    color=C_RXN, label="Ax ←", lpad=(0, -0.20))
+    _arrow(ax2, ox, oy, -0.80, 0,    color=C_RXN, label="Ax →", lpad=(0, -0.20))
 
     ax2.text(ox, oy - 0.70,
              "ΣFx = 0 :  Ax + F_12 + F_1A cosθ = 0\\n"

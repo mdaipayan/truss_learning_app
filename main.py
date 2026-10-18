@@ -376,9 +376,14 @@ def _mark_tutorial_read(idx: int):
 
 
 def _navigate_tutorial(idx: int):
-    """Update the selected tutorial and rerun the Learn page."""
-    st.session_state.tut_idx = max(0, min(int(idx), len(TUTORIALS) - 1))
-    st.rerun()
+    """Synchronize the tutorial index and selectbox before Streamlit reruns.
+
+    This is used as a widget callback, so Streamlit performs the rerun after
+    the callback returns; calling st.rerun() here is unnecessary.
+    """
+    bounded = max(0, min(int(idx), len(TUTORIALS) - 1))
+    st.session_state.tut_idx = bounded
+    st.session_state["learn_topic_selector"] = TUTORIALS[bounded]["title"]
 
 
 def page_tutorials():

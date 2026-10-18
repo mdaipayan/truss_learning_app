@@ -181,8 +181,8 @@ STEPS = [
                 "id":    "FCD",
                 "label": "Force in member CD — find **F_CD** (kN, + = tension)",
                 "eq":    (
-                    "Known: F_CA = −20 kN (i.e. force on C is +20 kN toward B)\n"
-                    "       F_CB = +20 kN (force on C is +20 kN toward B)\n"
+                    "Known: F_AC = +20 kN (tension pulls joint C toward A)\n"
+                    "       F_CB = +20 kN (tension pulls joint C toward B)\n"
                     "CD is vertical (90°). ΣFy = 0 :   F_CD = ?"
                 ),
                 "hint":  (

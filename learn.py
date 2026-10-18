@@ -115,8 +115,8 @@ def _clean_content(text: str) -> str:
     text = text.replace("ΣFx = 0", "horizontal force equilibrium")
     text = text.replace("ΣFy = 0", "vertical force equilibrium")
     text = re.sub(
-        r"Example: A simple triangular truss with pin \+ roller support:\\s*"
-        r"m = 3, r = 3, j = 3\\s*→\\s*3 \\+ 3 = 2\\(3\\) = 6\\s*✓ Determinate",
+        r"Example: A simple triangular truss with pin \+ roller support:\s*"
+        r"m = 3, r = 3, j = 3\s*→\s*3 \+ 3 = 2\(3\) = 6\s*✓ Determinate",
         "Example: A simple triangular truss with three members and three reactions meets the determinate counting condition.",
         text,
         flags=re.IGNORECASE,

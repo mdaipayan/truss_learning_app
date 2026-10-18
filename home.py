@@ -368,7 +368,7 @@ def _render_stats(progress: dict[str, Any]) -> None:
                 elif key == "home_stat_streak":
                     number = progress["streak"]
                     unit = progress["streak_unit"]
-                    suffix = " 🔥" if number > 0 or unit.lower() == "days" else ""
+                    suffix = " 🔥"
                     st.metric(label, f"{number} {unit}{suffix}")
                     st.caption("Keep your learning momentum going")
                 else:
@@ -394,20 +394,6 @@ def _render_module_card(module: dict[str, str], navigate: Navigate) -> None:
             key=f"home_open_{key}",
         ):
             _navigate_to(navigate, module["route"])
-
-
-def _render_modules(navigate: Navigate) -> None:
-    st.write("")
-    st.markdown('<div class="home-section-kicker">Choose your next step</div>',
-                unsafe_allow_html=True)
-    st.markdown('<div class="home-section-title">Learn the idea. Solve the structure. '
-                'Test your understanding.</div>', unsafe_allow_html=True)
-
-    first_row = st.columns(2, gap="medium")
-    _render_module_card(MODULES[0], navigate)
-    # Each card has its own keyed container. Create them in the intended grid
-    # order by writing the first pair into the corresponding columns.
-    # (The helper is called directly on each column below for deterministic layout.)
 
 
 def _render_module_grid(navigate: Navigate) -> None:

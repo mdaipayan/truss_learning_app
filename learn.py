@@ -55,6 +55,30 @@ FORMULAS: dict[str, list[tuple[str, str]]] = {
         ("Displacement constraint", r"\|\mathbf{u}_j\|\leq \delta_{\mathrm{allow}}"),
         ("Redundant member axial stiffness", r"k_i=\frac{E_iA_i}{L_i}"),
     ],
+    "Determinate Truss: Force, Stress and Displacement": [
+        ("Planar truss determinacy", r"m+r=2j"),
+        ("Normal stress", r"\sigma_i=\frac{N_i}{A_i}"),
+        ("Axial deformation", r"\delta_i=\frac{N_iL_i}{EA_i}"),
+        ("Axial stiffness", r"k_i=\frac{EA_i}{L_i}"),
+        ("AB stress example", r"\sigma_{AB}=\frac{20000}{A_{AB}}\ \mathrm{MPa}"),
+        ("Vertical displacement result in the notes", r"\delta_{Cv}=\frac{75}{A_{AC}}\ \mathrm{mm}"),
+    ],
+    "Indeterminate Triangle: Redundant Reaction": [
+        ("Degree of indeterminacy", r"D_s=m+r-2j=3+4-6=1"),
+        ("Equilibrium: AB", r"N_{AB}=20+R"),
+        ("Equilibrium: AC", r"N_{AC}=0.75R-5"),
+        ("Equilibrium: BC", r"N_{BC}=-1.25(20+R)"),
+        ("Compatibility at C", r"u_C=\sum_i\frac{N_in_iL_i}{EA_i}=0"),
+        ("Redundant reaction for the uploaded example", r"R=-\frac{80000/A_1-11250/A_2+156250/A_3}{4000/A_1+1687.5/A_2+7812.5/A_3}"),
+    ],
+    "Internal Redundancy: Force Method": [
+        ("Degree of indeterminacy", r"D_s=m+r-2j=6+3-8=1"),
+        ("Chosen redundant", r"X=N_{BD}"),
+        ("Force recovery", r"N_i=N_i^{(0)}+Xn_i"),
+        ("Member flexibility", r"f_i=\frac{L_i}{EA_i}"),
+        ("Compatibility expression in the notes", r"\sum_i\frac{N_in_iL_i}{EA_i}=0"),
+        ("Optimization design variables", r"\mathbf{A}=[A_1,A_2,\ldots,A_m]"),
+    ],
 }
 
 LEARN_CSS = r"""
@@ -704,10 +728,289 @@ def _optimization_figure() -> go.Figure:
     )
 
 
+
+def _determinate_example_figure() -> go.Figure:
+    """Uploaded notes: 3-4-5 determinate triangle with two loads at C."""
+    nodes = {"A": (0.0, 0.0), "B": (4.0, 0.0), "C": (0.0, 3.0)}
+    fig = go.Figure()
+    for a, b, label in (
+        ("A", "B", "AB — 4 m bottom member"),
+        ("A", "C", "AC — 3 m vertical member"),
+        ("B", "C", "BC — 5 m diagonal"),
+    ):
+        _add_member(fig, nodes, a, b, label, width=4.0)
+    _add_supports(fig, nodes, ("A", "B"))
+    _add_nodes(fig, nodes)
+    _add_force_arrow(fig, (-0.9, 3.0), (0.0, 3.0), "Px = 20 kN",
+                     label_position=(-0.52, 3.23), color="#92400e")
+    _add_force_arrow(fig, (0.0, 4.05), (0.0, 3.15), "Py = 20 kN",
+                     label_position=(0.48, 3.78), color="#92400e")
+    _add_force_arrow(fig, (0.0, 0.0), (-0.82, 0.0), "Ax = −20 kN",
+                     label_position=(-0.57, 0.24), color="#6d28d9")
+    _add_force_arrow(fig, (0.0, 0.0), (0.0, 0.62), "Ay = 5 kN",
+                     label_position=(0.48, 0.43), color="#6d28d9")
+    _add_force_arrow(fig, (4.0, 0.0), (4.0, 0.62), "By = 15 kN",
+                     label_position=(4.68, 0.43), color="#6d28d9")
+    _add_dimension(fig, 0.0, 4.0, -0.66, "4 m")
+    fig.add_annotation(x=0.5, y=1.58, text="AB: 20 kN tension",
+                       showarrow=False, font={"size": 10, "color": "#166534"},
+                       bgcolor="#dcfce7", borderpad=3)
+    fig.add_annotation(x=0.53, y=2.25, text="AC: 5 kN compression",
+                       showarrow=False, font={"size": 10, "color": "#991b1b"},
+                       bgcolor="#fee2e2", borderpad=3)
+    fig.add_annotation(x=2.65, y=1.30, text="BC: 25 kN compression",
+                       showarrow=False, font={"size": 10, "color": "#991b1b"},
+                       bgcolor="#fee2e2", borderpad=3)
+    return _layout(
+        fig, "Determinate 3–4–5 truss — reactions and member forces",
+        height=430, x_range=(-1.35, 5.05), y_range=(-0.95, 4.4), equal_scale=False,
+    )
+
+
+def _indeterminate_triangle_figure() -> go.Figure:
+    """Uploaded notes: the triangular truss gains a horizontal reaction at C."""
+    nodes = {"A": (0.0, 0.0), "B": (4.0, 0.0), "C": (0.0, 3.0)}
+    fig = go.Figure()
+    for a, b, label in (
+        ("A", "B", "AB — 4 m"),
+        ("A", "C", "AC — 3 m"),
+        ("B", "C", "BC — 5 m"),
+    ):
+        _add_member(fig, nodes, a, b, label, width=4.0)
+    _add_supports(fig, nodes, ("A", "B"))
+    _add_nodes(fig, nodes)
+    # The vertical guide and small rollers indicate the added horizontal restraint at C.
+    fig.add_shape(type="line", x0=-0.32, y0=2.45, x1=-0.32, y1=3.60,
+                  line={"color": "#475569", "width": 3})
+    for yy in (2.73, 3.14):
+        fig.add_shape(type="circle", x0=-0.22, x1=-0.10, y0=yy-0.06, y1=yy+0.06,
+                      line={"color": "#475569", "width": 1.5}, fillcolor="#e2e8f0")
+    fig.add_annotation(x=-0.58, y=3.65, text="Vertical guide",
+                       showarrow=False, font={"size": 9, "color": "#475569"})
+    _add_force_arrow(fig, (0.0, 3.36), (0.85, 3.36), "Px = 20 kN",
+                     label_position=(0.48, 3.61), color="#92400e")
+    _add_force_arrow(fig, (0.30, 4.05), (0.30, 3.18), "Py = 20 kN",
+                     label_position=(0.73, 3.93), color="#92400e")
+    _add_force_arrow(fig, (0.0, 2.75), (-0.78, 2.75), "R = Cx",
+                     label_position=(-0.53, 2.98), color="#6d28d9")
+    _add_force_arrow(fig, (0.0, 0.0), (-0.68, 0.0), "Ax",
+                     label_position=(-0.48, 0.22), color="#6d28d9")
+    _add_force_arrow(fig, (0.0, 0.0), (0.0, 0.52), "Ay",
+                     label_position=(0.20, 0.40), color="#6d28d9")
+    _add_force_arrow(fig, (4.0, 0.0), (4.0, 0.52), "By",
+                     label_position=(4.20, 0.40), color="#6d28d9")
+    fig.add_annotation(
+        x=2.0, y=1.0, text="<b>m = 3, r = 4, j = 3</b><br>m + r − 2j = 1",
+        showarrow=False, font={"size": 11, "color": "#92400e"},
+        bgcolor="#fffbeb", bordercolor="#f59e0b", borderpad=5,
+    )
+    return _layout(
+        fig, "One extra reaction — choose R = Cx as the redundant",
+        height=430, x_range=(-1.15, 5.0), y_range=(-0.82, 4.35), equal_scale=False,
+    )
+
+
+def _double_diagonal_figure() -> go.Figure:
+    """Uploaded notes: rectangular truss with both diagonals, BD as redundant."""
+    nodes = {
+        "A": (0.0, 0.0), "B": (4.0, 0.0),
+        "C": (4.0, 3.0), "D": (0.0, 3.0),
+    }
+    members = (
+        ("A", "B", "AB — bottom chord"),
+        ("B", "C", "BC — right vertical"),
+        ("C", "D", "CD — top chord"),
+        ("D", "A", "DA — left vertical"),
+        ("A", "C", "AC — primary diagonal"),
+        ("B", "D", "BD — selected redundant"),
+    )
+    fig = go.Figure()
+    for a, b, label in members:
+        redundant = (a, b) == ("B", "D")
+        _add_member(
+            fig, nodes, a, b, label,
+            color="#dc2626" if redundant else "#1e3a5f",
+            width=5.0 if redundant else 3.2,
+            dash="dash" if redundant else "solid",
+        )
+    _add_supports(fig, nodes, ("A", "B"))
+    _add_nodes(fig, nodes)
+    _add_force_arrow(fig, (4.0, 4.05), (4.0, 3.12), "P = 10 kN",
+                     label_position=(4.58, 3.70), color="#92400e")
+    _add_force_arrow(fig, (0.0, 0.0), (0.0, 0.56), "Ay",
+                     label_position=(0.25, 0.40), color="#6d28d9")
+    _add_force_arrow(fig, (4.0, 0.0), (4.0, 0.56), "By",
+                     label_position=(4.26, 0.40), color="#6d28d9")
+    _add_dimension(fig, 0.0, 4.0, -0.66, "4 m")
+    fig.add_annotation(
+        x=2.0, y=1.85, text="<b>BD is removed to form the primary structure</b>",
+        showarrow=False, font={"size": 10, "color": "#991b1b"},
+        bgcolor="#fff1f2", bordercolor="#fda4af", borderpad=4,
+    )
+    fig.add_annotation(
+        x=2.55, y=2.65, text="AC retained",
+        showarrow=False, font={"size": 9, "color": "#1e3a5f"},
+        bgcolor="#eff6ff", borderpad=2,
+    )
+    return _layout(
+        fig, "Internally indeterminate rectangular truss", height=430,
+        x_range=(-0.8, 5.05), y_range=(-1.0, 4.45), equal_scale=False,
+    )
+
+
+def _small_indeterminate_response(
+    areas_mm2: Sequence[float],
+) -> dict[str, float]:
+    """Solve the area-dependent redundant reaction using the uploaded notes' equation."""
+    if len(areas_mm2) != 3:
+        raise ValueError("Provide areas for AB, AC and BC.")
+    a1, a2, a3 = (float(value) for value in areas_mm2)
+    if any(not (500.0 <= area <= 10000.0) for area in (a1, a2, a3)):
+        raise ValueError("Areas must lie in the demonstrator range 500–10000 mm².")
+    numerator = 80000.0 / a1 - 11250.0 / a2 + 156250.0 / a3
+    denominator = 4000.0 / a1 + 1687.5 / a2 + 7812.5 / a3
+    if denominator <= 0:
+        raise ValueError("The flexibility denominator must be positive.")
+    reaction = -numerator / denominator
+    return {
+        "R": reaction,
+        "N_AB": 20.0 + reaction,
+        "N_AC": 0.75 * reaction - 5.0,
+        "N_BC": -1.25 * (20.0 + reaction),
+    }
+
+
+def _render_determinate_area_demo() -> None:
+    st.markdown("#### 🧪 Try it: area changes stress, not ideal determinate force")
+    area = st.slider(
+        "Area of member AB (mm²)", min_value=500, max_value=2000,
+        value=1000, step=100, key="learn_determinate_ab_area",
+    )
+    force_kn = 20.0
+    stress_mpa = force_kn * 1000.0 / area
+    c1, c2 = st.columns(2)
+    with c1:
+        st.metric("AB member force", f"{force_kn:.1f} kN", "fixed by equilibrium")
+    with c2:
+        st.metric("AB normal stress", f"{stress_mpa:.1f} MPa")
+    st.caption(
+        "Using N_AB = 20 kN from the uploaded example. "
+        "Stress is calculated as N/A, with 1 MPa = 1 N/mm²."
+    )
+    fig = go.Figure(go.Bar(
+        x=["A = 1000 mm²", f"A = {area} mm²"],
+        y=[20.0, stress_mpa],
+        marker_color=["#2563eb", "#d97706"],
+        text=[f"{20.0:.1f} MPa", f"{stress_mpa:.1f} MPa"],
+        textposition="outside",
+        hovertemplate="%{x}<br>Stress = %{y:.2f} MPa<extra></extra>",
+    ))
+    fig.update_layout(
+        title="Area controls stress for this fixed member force",
+        yaxis_title="Normal stress (MPa)", height=300,
+        margin={"l": 10, "r": 10, "t": 55, "b": 20},
+        paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
+
+
+def _render_indeterminate_area_lab() -> None:
+    st.markdown("#### 🧪 Glass-box experiment: change areas and watch the forces redistribute")
+    st.caption(
+        "This reproduces the reaction equation from the uploaded three-member example. "
+        "A1 = AB, A2 = AC, and A3 = BC. All areas are in mm²; forces and R are in kN."
+    )
+    columns = st.columns(3)
+    labels = ("A1 — AB (mm²)", "A2 — AC (mm²)", "A3 — BC (mm²)")
+    keys = ("learn_ind_A1", "learn_ind_A2", "learn_ind_A3")
+    values: list[int] = []
+    for col, label, key in zip(columns, labels, keys):
+        with col:
+            values.append(st.slider(
+                label, min_value=500, max_value=4000, step=500,
+                value=1000, key=key,
+            ))
+    response = _small_indeterminate_response(values)
+    st.metric("Redundant reaction R = Cx", f"{response['R']:.3f} kN")
+    records = []
+    for member in ("N_AB", "N_AC", "N_BC"):
+        force = response[member]
+        records.append({
+            "Member": member.replace("N_", ""),
+            "Area (mm²)": values[("N_AB", "N_AC", "N_BC").index(member)],
+            "Force (kN)": round(force, 3),
+            "Nature": "Tension" if force > 1e-8 else "Compression" if force < -1e-8 else "Zero",
+        })
+    st.dataframe(records, use_container_width=True, hide_index=True)
+    colours = [
+        "#15803d" if item["Force (kN)"] >= 0 else "#b91c1c"
+        for item in records
+    ]
+    fig = go.Figure(go.Bar(
+        x=[item["Member"] for item in records],
+        y=[item["Force (kN)"] for item in records],
+        marker_color=colours,
+        text=[f"{item['Force (kN)']:.3f}" for item in records],
+        textposition="outside",
+        hovertemplate="%{x}<br>Signed axial force = %{y:.3f} kN<extra></extra>",
+    ))
+    fig.update_layout(
+        title="Signed member forces (positive = tension, negative = compression)",
+        yaxis_title="Force (kN)", height=330,
+        margin={"l": 10, "r": 10, "t": 55, "b": 20},
+        paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
+    st.info(
+        "Compare the default equal-area case (R ≈ −16.667 kN) with A3 = 2000 mm² "
+        "(R ≈ −15.309 kN). A change in one area changes the redundant reaction and "
+        "the forces in all three members."
+    )
+
+
+def _render_force_method_audit() -> None:
+    st.markdown("#### 🔎 Glass-box force-method audit")
+    st.caption(
+        "The study note gives the following virtual-force magnitudes and member lengths. "
+        "This panel checks the displayed denominator terms, rather than silently accepting the printed result."
+    )
+    terms = [
+        ("AB", 0.8 ** 2 * 4000),
+        ("BC", 0.6 ** 2 * 3000),
+        ("CD", 0.8 ** 2 * 4000),
+        ("DA", 0.6 ** 2 * 3000),
+        ("AC", 1.0 ** 2 * 5000),
+    ]
+    denominator_sum = sum(value for _, value in terms)
+    st.dataframe(
+        [{"Primary member": name, "n²L term (mm)": f"{value:.0f}"}
+         for name, value in terms]
+        + [{"Primary member": "Sum of listed terms",
+            "n²L term (mm)": f"{denominator_sum:.0f}"}],
+        use_container_width=True, hide_index=True,
+    )
+    st.warning(
+        f"The displayed terms sum to {denominator_sum:.0f} mm, not the 13,400 mm "
+        "denominator reported in the PDF. The PDF also abbreviates the compatibility "
+        "condition as δBD = 0. Verify the redundant-member compatibility convention "
+        "and the numerical solution with the instructor before treating its reported "
+        "X = −1.3433 kN as a validated answer."
+    )
+
+
 def make_topic_figure(index: int) -> go.Figure:
     """Build the interactive Plotly diagram for a tutorial index."""
-    builders = (_basic_figure, _types_figure, _joints_figure,
-                _sections_figure, _determinacy_figure, _optimization_figure)
+    builders = (
+        _basic_figure,
+        _types_figure,
+        _joints_figure,
+        _sections_figure,
+        _determinacy_figure,
+        _optimization_figure,
+        _determinate_example_figure,
+        _indeterminate_triangle_figure,
+        _double_diagonal_figure,
+    )
     return builders[index]() if 0 <= index < len(builders) else _basic_figure()
 
 
@@ -832,6 +1135,17 @@ def render_learn(
         if index == 5 and extra_renderer is not None:
             st.divider()
             extra_renderer()
+
+        # Additional experiments are based on the three uploaded study notes.
+        if index == 6:
+            st.divider()
+            _render_determinate_area_demo()
+        elif index == 7:
+            st.divider()
+            _render_indeterminate_area_lab()
+        elif index == 8:
+            st.divider()
+            _render_force_method_audit()
 
         st.divider()
         previous_col, complete_col, next_col = st.columns([1, 1.6, 1], gap="small")

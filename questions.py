@@ -465,7 +465,6 @@ QUESTIONS = [
         "answer": 0,
         "explanation": "m + r − 2j = 6 + 3 − 2(4) = 1. Assuming geometric stability and independent supports, this indicates one degree of static indeterminacy by count.",
     },
-,
 
     {
         "topic": "Determinate vs Indeterminate",

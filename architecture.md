@@ -35,6 +35,7 @@ The project uses top-level Python modules. Keep this layout unless there is a cl
     │   └── test_optimization_lab.py
     ├── main.py                 # Streamlit entry point, navigation, global UI
     ├── home.py                 # Reusable responsive Home dashboard
+    ├── learn.py                # Responsive tutorials, Plotly diagrams and formula cards
     ├── questions.py            # Tutorial text and quiz question bank
     ├── game.py                 # XP, achievements, quiz/tutorial progress
     ├── diagrams.py             # Matplotlib structural and educational diagrams
@@ -53,6 +54,7 @@ The project uses top-level Python modules. Keep this layout unless there is a cl
 
 - **main.py** owns Streamlit initialization, global responsive CSS, navigation, page-level composition, and connects live game state to the Home renderer. It calls optimization_lab.render_lab() from the sixth tutorial. It should orchestrate, not contain a second copy of the optimization mathematics.
 - **home.py** renders the landing dashboard: hero, CTA buttons, live rank/XP/streak/achievement cards, and module-navigation cards. It accepts a progress mapping and a required navigation callback, so it does not import or depend on main.py's router.
+- **learn.py** renders the tutorials, responsive desktop split layout, hoverable Plotly schematics, LaTeX formula cards, assumptions, and previous/next/completion controls. It receives tutorial data, completed indices, and callbacks from main.py. It does not update XP or write progress directly.
 - **questions.py** stores the TUTORIALS and QUESTIONS content. Avoid mixing solver algorithms or Streamlit callbacks into this content-only module.
 - **game.py** defines the progress schema, XP/levels, achievement rules, and progress load/save functions. Existing per-session temporary files do not provide durable identity-based student records.
 - **diagrams.py** creates Matplotlib teaching diagrams. Each function should return a Figure; callers display and then close it.

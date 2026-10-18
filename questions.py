@@ -465,5 +465,66 @@ QUESTIONS = [
         "answer": 0,
         "explanation": "m + r − 2j = 6 + 3 − 2(4) = 1. Assuming geometric stability and independent supports, this indicates one degree of static indeterminacy by count.",
     },
+,
 
+    {
+        "topic": "Determinate vs Indeterminate",
+        "question": "For the three-member determinate truss in the study notes, AB carries 20 kN. What happens to its ideal member force if A_AB is reduced from 1000 mm² to 500 mm²?",
+        "options": [
+            "It remains 20 kN for the same geometry and prescribed loading",
+            "It doubles to 40 kN",
+            "It falls to 10 kN",
+            "It becomes zero",
+        ],
+        "answer": 0,
+        "explanation": "Equilibrium fixes the ideal member force in this determinate example. Reducing area from 1000 to 500 mm² doubles stress from 20 to 40 MPa, but does not change the 20 kN force.",
+    },
+    {
+        "topic": "Indeterminate Triangle",
+        "question": "In the uploaded three-member triangle, which quantity is selected as the redundant?",
+        "options": [
+            "Vertical reaction Ay at A",
+            "Vertical reaction By at B",
+            "Horizontal reaction R = Cx at C",
+            "Member force N_AB",
+        ],
+        "answer": 2,
+        "explanation": "The horizontal guide at C adds a fourth reaction component. For m=3, r=4, j=3, the count is m+r−2j=1, and the notes select R=Cx as the redundant.",
+    },
+    {
+        "topic": "Indeterminate Triangle",
+        "question": "For A1=A2=A3=1000 mm² in the uploaded three-member example, what redundant reaction is reported?",
+        "options": [
+            "R = +16.667 kN",
+            "R = −16.667 kN",
+            "R = −10.000 kN",
+            "R = 0 kN",
+        ],
+        "answer": 1,
+        "explanation": "The compatibility equation in the study notes gives R≈−16.667 kN for equal areas. The negative sign indicates that the actual reaction is opposite the chosen positive horizontal direction.",
+    },
+    {
+        "topic": "Force Method",
+        "question": "For the rectangular truss with both diagonals, which member is chosen as the internal redundant in the uploaded notes?",
+        "options": [
+            "AB",
+            "BC",
+            "AC",
+            "BD",
+        ],
+        "answer": 3,
+        "explanation": "The notes select diagonal BD as X=N_BD and remove it temporarily to form the primary determinate structure.",
+    },
+    {
+        "topic": "Force Method",
+        "question": "What should be checked before using the reported redundant force X=−1.3433 kN from the uploaded rectangular-truss notes?",
+        "options": [
+            "The denominator sum and the compatibility condition",
+            "Only the colour of the diagonal",
+            "Only the number of plotted nodes",
+            "The density of concrete",
+        ],
+        "answer": 0,
+        "explanation": "The listed n²L terms sum to 12,280 mm, not the 13,400 mm reported in the notes. The compatibility statement also needs a clear convention for the restored redundant member, so the numerical result requires instructor verification.",
+    },
 ]

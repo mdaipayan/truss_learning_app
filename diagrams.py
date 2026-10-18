@@ -285,7 +285,7 @@ def diagram_method_joints():
     _arrow(ax2, ox, oy,  0,   -0.85, color=C_TEN, label="F_A1 (T)", lpad=(0.42, -0.02))
 
     ax2.text(ox, oy - 0.95,
-             "ΣFx = 0 :  F_AB = 0\\n"
+             "ΣFx = 0 :  F_AB = 0\n"
              "ΣFy = 0 :  F_A1 = 0",
              ha="center", fontsize=9, color="#0f172a",
              bbox=dict(boxstyle="round,pad=0.45", fc="#dbeafe",

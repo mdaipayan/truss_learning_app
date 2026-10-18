@@ -1047,6 +1047,21 @@ def _parallel_bars_figure() -> go.Figure:
     )
 
 
+def _parallel_bar_forces(
+    area1_mm2: float,
+    area2_mm2: float,
+    total_load_kn: float = 100.0,
+) -> tuple[float, float]:
+    """Share load between compatible parallel bars with equal E and equal L."""
+    if area1_mm2 <= 0 or area2_mm2 <= 0 or total_load_kn < 0:
+        raise ValueError("Areas must be positive and load must be non-negative.")
+    total_area = float(area1_mm2 + area2_mm2)
+    return (
+        float(total_load_kn * area1_mm2 / total_area),
+        float(total_load_kn * area2_mm2 / total_area),
+    )
+
+
 def _render_parallel_bar_lab() -> None:
     st.markdown("#### 🧪 Interactive experiment: see stiffness share the load")
     st.caption(
@@ -1064,9 +1079,7 @@ def _render_parallel_bar_lab() -> None:
             "Bar 2 area A2 (mm²)", 500, 4000, 2000, step=500,
             key="learn_parallel_area_2",
         )
-    total_area = float(area1 + area2)
-    force1 = 100.0 * area1 / total_area
-    force2 = 100.0 * area2 / total_area
+    force1, force2 = _parallel_bar_forces(area1, area2, total_load_kn=100.0)
     left, right = st.columns(2)
     with left:
         st.metric("Force in bar 1", f"{force1:.2f} kN")

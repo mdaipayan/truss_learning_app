@@ -259,10 +259,10 @@ def diagram_method_joints():
     _arrow(ax1, 1, 1, 0, -0.5, label="P")
     _arrow(ax1, 2, 1, 0, -0.5, label="P")
 
-    # Highlight joint A (top-left)
-    ax1.add_patch(mpatches.Circle((0, 1), 0.26, color="#fbbf24",
+    # Highlight support joint 1 (bottom-left), matching the FBD at right.
+    ax1.add_patch(mpatches.Circle((0, 0), 0.26, color="#fbbf24",
                                    fill=False, lw=2.5, ls="--", zorder=8))
-    ax1.text(0, 1.45, "Analyse\nthis joint", ha="center", fontsize=8.5,
+    ax1.text(0.25, -0.42, "Analyse joint 1", ha="left", fontsize=8.5,
              color="#b45309", fontweight="bold")
 
     ax1.set_xlim(-0.6, 4.2)
@@ -274,27 +274,28 @@ def diagram_method_joints():
     _ax_clean(ax2)
     ox, oy = 1.7, 1.5
 
-    # Joint circle
+    # Joint 1 is the pin support; reactions are known from global equilibrium.
     ax2.add_patch(mpatches.Circle((ox, oy), 0.22, color="#fef3c7",
                                    ec="#f59e0b", lw=2.0, zorder=5))
-    ax2.text(ox, oy, "A", ha="center", va="center", fontsize=13,
+    ax2.text(ox, oy, "1", ha="center", va="center", fontsize=13,
              fontweight="bold", color="#0f172a", zorder=6)
 
-    _arrow(ax2, ox, oy,  0.90,  0,    color=C_TEN,  label="F_AB → (T)",  lpad=(0, 0.20))
-    _arrow(ax2, ox, oy,  0.65, -0.65, color=C_CMP,  label="F_A1 (C)",    lpad=(0.50, 0.10))
-    _arrow(ax2, ox, oy,  0,    0.85,  color=C_RXN,  label="Ay ↑",        lpad=(0.28, 0))
-    _arrow(ax2, ox, oy,  0.80,  0,    color=C_RXN,  label="Ax →",        lpad=(0, -0.20))
+    # F_12 is the bottom chord; F_1A is the diagonal to the upper-left node.
+    _arrow(ax2, ox, oy,  0.90,  0,    color=C_TEN, label="F_12 (T)", lpad=(0, 0.20))
+    _arrow(ax2, ox, oy,  0.65,  0.65, color=C_TEN, label="F_1A (T)", lpad=(0.45, 0.12))
+    _arrow(ax2, ox, oy,  0,    0.85, color=C_RXN, label="Ay ↑", lpad=(0.28, 0))
+    _arrow(ax2, ox, oy, -0.80, 0,    color=C_RXN, label="Ax ←", lpad=(0, -0.20))
 
     ax2.text(ox, oy - 0.70,
-             "ΣFx = 0 :  Ax + F_AB cosθ  = 0\n"
-             "ΣFy = 0 :  Ay + F_A1 sinθ  = 0",
+             "ΣFx = 0 :  Ax + F_12 + F_1A cosθ = 0\\n"
+             "ΣFy = 0 :  Ay + F_1A sinθ = 0",
              ha="center", fontsize=9, color="#0f172a",
              bbox=dict(boxstyle="round,pad=0.45", fc="#dbeafe",
                        ec="#3b82f6", lw=1.2))
 
     ax2.set_xlim(0.2, 3.5)
     ax2.set_ylim(0.3, 3.0)
-    ax2.set_title("Free-Body Diagram at Joint A", fontsize=11,
+    ax2.set_title("Free-Body Diagram at Joint 1", fontsize=11,
                   fontweight="bold", color="#0f172a", pad=8)
 
     plt.tight_layout(pad=1.2)

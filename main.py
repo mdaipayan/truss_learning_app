@@ -913,7 +913,7 @@ def page_reference():
 | Extra member | Not applicable to the chosen topology | Adds a load path, material and design variables; may improve stiffness |
 | Optimization result | Area sizing cannot redistribute ideal member forces | Stiffness redistribution may help, but lower weight is not guaranteed |
 """)
-    st.markdown(r"Material-volume objective: $V = \\sum_i L_i A_i$")
+    st.markdown(r"Material-volume objective: $V = \sum_i L_i A_i$")
 
     st.subheader("Method of Joints")
     st.markdown("""

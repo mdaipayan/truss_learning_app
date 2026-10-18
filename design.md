@@ -48,6 +48,18 @@ Use concise introductory text and a small set of primary entry points. Metrics m
 - Do not silently reset a partially completed quiz.
 - Keep keyboard navigation and readable focus states.
 
+### Learn / Interactive tutorials
+
+- Use a topic selectbox so all tutorial titles remain usable on mobile.
+- On desktop, place theory/formulas in the left column and a Plotly diagram in the right column. On mobile, stack theory first and visualization second.
+- Topic 1 must be a simple triangular roof truss with hoverable joints showing coordinates and hoverable members showing structural names.
+- Use Plotly, not static PNGs, for lesson diagrams where interactive inspection adds value. Use one figure per topic with the same compact margins and readable hover typography.
+- Put the topic heading, completion state, and XP reward before the split layout.
+- Render formulas via st.latex in separate formula cards, particularly m + r = 2j and i = m + r − 2j.
+- Keep previous, Mark as read, and next controls at the bottom. A completed topic has a disabled completion button.
+- Preserve the existing optimization activity by injecting its renderer into the sixth tutorial rather than coupling learn.py directly to optimization_lab imports.
+- Keep completion callbacks owned by main.py, so learn.py cannot accidentally double-award XP or bypass persistence.
+
 ### Optimization lab
 
 Present this in a teaching sequence:

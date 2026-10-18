@@ -79,6 +79,14 @@ FORMULAS: dict[str, list[tuple[str, str]]] = {
         ("Compatibility expression in the notes", r"\sum_i\frac{N_in_iL_i}{EA_i}=0"),
         ("Optimization design variables", r"\mathbf{A}=[A_1,A_2,\ldots,A_m]"),
     ],
+    "Parallel Bars: Compatibility and Load Sharing": [
+        ("Equilibrium", r"F_1+F_2=P"),
+        ("Compatibility of plate displacement", r"\delta_1=\delta_2"),
+        ("Axial bar deformation", r"\delta_i=\frac{F_iL_i}{E_iA_i}"),
+        ("Axial stiffness", r"k_i=\frac{E_iA_i}{L_i}"),
+        ("Load-sharing ratio", r"\frac{F_1}{F_2}=\frac{k_1}{k_2}"),
+        ("Equal E and equal L", r"\frac{F_1}{F_2}=\frac{A_1}{A_2}"),
+    ],
 }
 
 LEARN_CSS = r"""
@@ -998,6 +1006,97 @@ def _render_force_method_audit() -> None:
     )
 
 
+
+def _parallel_bars_figure() -> go.Figure:
+    """Two axial bars under a rigid plate, illustrating compatible load sharing."""
+    nodes = {
+        "A": (0.0, 0.0), "B": (3.0, 0.0),
+        "C": (0.0, 2.0), "D": (3.0, 2.0),
+    }
+    fig = go.Figure()
+    _add_member(fig, nodes, "A", "C", "Bar 1 — area A1", color="#2563eb", width=7.0)
+    _add_member(fig, nodes, "B", "D", "Bar 2 — area A2", color="#d97706", width=7.0)
+    _add_member(fig, nodes, "C", "D", "Rigid plate — compatible top movement",
+                color="#334155", width=9.0)
+    _add_supports(fig, nodes, ("A", "B"))
+    _add_nodes(fig, nodes)
+    _add_force_arrow(fig, (0.0, 2.0), (0.0, 2.72), "F1",
+                     label_position=(-0.28, 2.50), color="#2563eb")
+    _add_force_arrow(fig, (3.0, 2.0), (3.0, 2.72), "F2",
+                     label_position=(3.27, 2.50), color="#d97706")
+    _add_force_arrow(fig, (1.5, 3.55), (1.5, 2.28), "P = 100 kN",
+                     label_position=(1.95, 3.18), color="#92400e")
+    fig.add_annotation(
+        x=0.0, y=1.10, text="<b>A1</b>", showarrow=False,
+        font={"size": 12, "color": "#1d4ed8"},
+        bgcolor="#eff6ff", borderpad=3,
+    )
+    fig.add_annotation(
+        x=3.0, y=1.10, text="<b>A2</b>", showarrow=False,
+        font={"size": 12, "color": "#92400e"},
+        bgcolor="#fffbeb", borderpad=3,
+    )
+    fig.add_annotation(
+        x=1.5, y=1.55, text="Rigid plate: δ1 = δ2",
+        showarrow=False, font={"size": 10, "color": "#334155"},
+        bgcolor="#f1f5f9", borderpad=3,
+    )
+    return _layout(
+        fig, "Parallel-bar system — equilibrium plus compatibility",
+        height=405, x_range=(-0.8, 3.8), y_range=(-0.8, 4.0), equal_scale=False,
+    )
+
+
+def _render_parallel_bar_lab() -> None:
+    st.markdown("#### 🧪 Interactive experiment: see stiffness share the load")
+    st.caption(
+        "Source setup: P = 100 kN, equal material and equal bar length. "
+        "Change the areas and compare the two axial forces."
+    )
+    a1_col, a2_col = st.columns(2)
+    with a1_col:
+        area1 = st.slider(
+            "Bar 1 area A1 (mm²)", 500, 4000, 1000, step=500,
+            key="learn_parallel_area_1",
+        )
+    with a2_col:
+        area2 = st.slider(
+            "Bar 2 area A2 (mm²)", 500, 4000, 2000, step=500,
+            key="learn_parallel_area_2",
+        )
+    total_area = float(area1 + area2)
+    force1 = 100.0 * area1 / total_area
+    force2 = 100.0 * area2 / total_area
+    left, right = st.columns(2)
+    with left:
+        st.metric("Force in bar 1", f"{force1:.2f} kN")
+    with right:
+        st.metric("Force in bar 2", f"{force2:.2f} kN")
+    st.success(f"Equilibrium check: F1 + F2 = {force1 + force2:.2f} kN = P")
+    st.markdown(
+        f"**Stiffness ratio:** k1/k2 = A1/A2 = {area1}/{area2} = "
+        f"{area1 / area2:.3f}. Because the material and lengths are equal, "
+        "the axial-force ratio equals the area ratio."
+    )
+    fig = go.Figure(go.Bar(
+        x=["Bar 1", "Bar 2"], y=[force1, force2],
+        marker_color=["#2563eb", "#d97706"],
+        text=[f"{force1:.2f} kN", f"{force2:.2f} kN"],
+        textposition="outside",
+        hovertemplate="%{x}<br>Force = %{y:.2f} kN<extra></extra>",
+    ))
+    fig.update_layout(
+        title="Load shared by each bar", yaxis_title="Axial force (kN)",
+        height=300, margin={"l": 10, "r": 10, "t": 55, "b": 20},
+        paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displaylogo": False})
+    st.info(
+        "Try A1 = 1000 mm² with A2 = 2000 mm² (about 33.33 / 66.67 kN), "
+        "then raise A2 to 4000 mm² (20 / 80 kN), as in the uploaded notes."
+    )
+
+
 def make_topic_figure(index: int) -> go.Figure:
     """Build the interactive Plotly diagram for a tutorial index."""
     builders = (
@@ -1010,6 +1109,7 @@ def make_topic_figure(index: int) -> go.Figure:
         _determinate_example_figure,
         _indeterminate_triangle_figure,
         _double_diagonal_figure,
+        _parallel_bars_figure,
     )
     return builders[index]() if 0 <= index < len(builders) else _basic_figure()
 
@@ -1146,6 +1246,9 @@ def render_learn(
         elif index == 8:
             st.divider()
             _render_force_method_audit()
+        elif index == 9:
+            st.divider()
+            _render_parallel_bar_lab()
 
         st.divider()
         previous_col, complete_col, next_col = st.columns([1, 1.6, 1], gap="small")

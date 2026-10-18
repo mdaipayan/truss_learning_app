@@ -162,7 +162,7 @@ STEPS = [
                 "ans":   20.0,
                 "tol":   0.5,
                 "unit":  "kN",
-                "expl":  "F_CB = −(−28.28 × −0.707) = **+20 kN (Tension)**.",
+                "expl":  "F_CB = F_BD × cos 135° = **+20 kN (Tension)**.",
             },
         ],
     },

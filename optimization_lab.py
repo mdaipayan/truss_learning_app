@@ -242,6 +242,10 @@ def render_lab():
         "The determinate layout has five members; adding the top chord **CD** "
         "creates one degree of static indeterminacy by the count."
     )
+    st.caption(
+        "The crossed diagonals AD and BC pass one another without a pin joint "
+        "at their intersection in this idealized connectivity."
+    )
 
     c1, c2, c3 = st.columns(3)
     with c1:

@@ -21,7 +21,7 @@ class LearnPageTests(unittest.TestCase):
             self.assertTrue(any(label in item for item in annotation_texts), label)
 
     def test_every_existing_tutorial_has_a_plotly_figure(self):
-        for index in range(9):
+        for index in range(10):
             with self.subTest(index=index):
                 fig = learn.make_topic_figure(index)
                 self.assertGreater(len(fig.data), 0)
@@ -56,7 +56,7 @@ class LearnPageTests(unittest.TestCase):
 
     def test_three_uploaded_study_note_topics_are_appended(self):
         titles = [item["title"] for item in TUTORIALS]
-        self.assertEqual(len(TUTORIALS), 9)
+        self.assertEqual(len(TUTORIALS), 10)
         for title in (
             "Determinate Truss: Force, Stress and Displacement",
             "Indeterminate Triangle: Redundant Reaction",
@@ -67,6 +67,7 @@ class LearnPageTests(unittest.TestCase):
             "Determinate vs Indeterminate",
             "Indeterminate Triangle",
             "Force Method",
+            "Compatibility and Load Sharing",
         }
         self.assertTrue(new_topics.issubset({item["topic"] for item in QUESTIONS}))
 
@@ -109,6 +110,27 @@ class LearnPageTests(unittest.TestCase):
                       if item["title"] == "Internal Redundancy: Force Method")
         self.assertIn("12280", lesson["content"])
         self.assertIn("instructor verification", lesson["content"])
+
+
+    def test_parallel_bar_load_sharing_matches_uploaded_cases(self):
+        force1, force2 = learn._parallel_bar_forces(1000, 2000)
+        self.assertAlmostEqual(force1, 33.3333333, places=5)
+        self.assertAlmostEqual(force2, 66.6666667, places=5)
+        self.assertAlmostEqual(force1 + force2, 100.0, places=8)
+
+        force1, force2 = learn._parallel_bar_forces(1000, 4000)
+        self.assertAlmostEqual(force1, 20.0, places=8)
+        self.assertAlmostEqual(force2, 80.0, places=8)
+
+    def test_parallel_bar_diagram_and_formula_cards_are_present(self):
+        fig = learn.make_topic_figure(9)
+        annotation_text = [str(item.text) for item in fig.layout.annotations]
+        self.assertTrue(any("P = 100 kN" in item for item in annotation_text))
+        self.assertTrue(any("δ1 = δ2" in item for item in annotation_text))
+        self.assertIn(
+            ("Load-sharing ratio", r"\frac{F_1}{F_2}=\frac{k_1}{k_2}"),
+            learn.FORMULAS["Parallel Bars: Compatibility and Load Sharing"],
+        )
 
     def test_determinacy_and_optimization_formulas_are_latex_renderable(self):
         self.assertIn(

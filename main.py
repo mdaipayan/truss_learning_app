@@ -274,21 +274,6 @@ def _save():
         st.error("Progress could not be saved. Please notify the instructor or administrator.")
 
 
-def _strip(text):
-    return re.sub(r"\[/?[^\]]+\]", "", text)
-
-
-# ── Diagrams per tutorial ─────────────────────────────────────────────────────
-
-DIAG_FNS = [
-    diagrams.diagram_basic_truss,
-    diagrams.diagram_truss_types,
-    diagrams.diagram_method_joints,
-    diagrams.diagram_method_sections,
-    diagrams.diagram_determinacy,
-    diagrams.diagram_determinacy_optimization,
-]
-
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
 def _sidebar():

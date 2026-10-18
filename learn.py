@@ -338,7 +338,7 @@ def _basic_figure() -> go.Figure:
 def _types_figure() -> go.Figure:
     """Topic 2: compact Pratt, Warren and Howe layouts with distinct load paths."""
     fig = go.Figure()
-    offset_pratt, offset_warren, offset_howe = 0.0, 4.35, 8.70
+    panels = (("Pratt", 0.0), ("Warren", 4.35), ("Howe", 8.70))
 
     def add_chord(nodes: Mapping[str, tuple[float, float]], names: Sequence[str],
                   label: str, color: str = "#1e3a5f") -> None:
@@ -346,67 +346,56 @@ def _types_figure() -> go.Figure:
             _add_member(fig, nodes, left, right, f"{label}: {left}-{right}",
                         color=color, width=2.6)
 
-    def add_panel(title: str, offset: float, kind: str) -> None:
-        bottom = [(offset + i, 0.0) for i in range(4)]
-        top = [(offset + i, 0.55) for i in range(4)]
-        if kind == "Warren":
-            top = [(offset + 0.5, 0.55), (offset + 1.5, 0.55),
-                   (offset + 2.5, 0.55)]
-            names = [f"W{i}" for i in range(4)] + [f"WT{i}" for i in range(3)]
-            points = bottom + top
-            nodes = {name: point for name, point in zip(names, points)}
-            bottom_names = names[:4]
-            upper_names = names[4:]
-            add_chord(nodes, bottom_names, "Bottom chord")
-            zigzag = [
-                (bottom_names[0], upper_names[0]), (upper_names[0], bottom_names[1]),
-                (bottom_names[1], upper_names[1]), (upper_names[1], bottom_names[2]),
-                (bottom_names[2], upper_names[2]), (upper_names[2], bottom_names[3]),
-            ]
-            for a, b in zigzag:
+    for title, offset in panels:
+        bottom_points = [(offset + i, 0.0) for i in range(4)]
+        if title == "Warren":
+            top_points = [(offset + 0.5, 0.55), (offset + 1.5, 0.55),
+                          (offset + 2.5, 0.55)]
+            nodes = {
+                **{name: point for name, point in zip(("A", "B", "C", "D"), bottom_points)},
+                **{name: point for name, point in zip(("E", "F", "G"), top_points)},
+            }
+            add_chord(nodes, ("A", "B", "C", "D"), "Bottom chord")
+            diagonals = (
+                ("A", "E"), ("E", "B"), ("B", "F"),
+                ("F", "C"), ("C", "G"), ("G", "D"),
+            )
+            for a, b in diagonals:
                 _add_member(fig, nodes, a, b, f"Warren diagonal {a}-{b}",
                             color="#d97706", width=2.8)
-            _add_supports(fig, nodes, (bottom_names[0], bottom_names[-1]))
         else:
+            top_points = [(offset + i, 0.55) for i in range(4)]
             nodes = {
-                **{f"{kind}B{i}": point for i, point in enumerate(bottom)},
-                **{f"{kind}T{i}": point for i, point in enumerate(top)},
+                **{name: point for name, point in zip(("A", "B", "C", "D"), bottom_points)},
+                **{name: point for name, point in zip(("E", "F", "G", "H"), top_points)},
             }
-            b_names = [f"{kind}B{i}" for i in range(4)]
-            t_names = [f"{kind}T{i}" for i in range(4)]
-            add_chord(nodes, b_names, "Bottom chord")
-            add_chord(nodes, t_names, "Top chord")
-            for i in range(4):
-                _add_member(fig, nodes, b_names[i], t_names[i], f"Vertical {i+1}",
+            add_chord(nodes, ("A", "B", "C", "D"), "Bottom chord")
+            add_chord(nodes, ("E", "F", "G", "H"), "Top chord")
+            for bottom, top in zip(("A", "B", "C", "D"), ("E", "F", "G", "H")):
+                _add_member(fig, nodes, bottom, top, f"Vertical {bottom}-{top}",
                             color="#64748b", width=2.2)
             for i in range(3):
-                if kind == "Pratt":
-                    a, b = t_names[i], b_names[i + 1]
-                    diag_color = "#15803d"
+                if title == "Pratt":
+                    a, b, diagonal_color = ("E", "F", "G")[i], ("B", "C", "D")[i], "#15803d"
                 else:
-                    a, b = b_names[i], t_names[i + 1]
-                    diag_color = "#b91c1c"
-                _add_member(fig, nodes, a, b, f"{kind} diagonal {a}-{b}",
-                            color=diag_color, width=2.8)
-            _add_supports(fig, nodes, (b_names[0], b_names[-1]))
+                    a, b, diagonal_color = ("A", "B", "C")[i], ("F", "G", "H")[i], "#b91c1c"
+                _add_member(fig, nodes, a, b, f"{title} diagonal {a}-{b}",
+                            color=diagonal_color, width=2.8)
+        _add_supports(fig, nodes, ("A", "D"))
         _add_nodes(fig, nodes)
         fig.add_annotation(
             x=offset + 1.5, y=1.13, text=f"<b>{title} truss</b>",
             showarrow=False, font={"size": 12, "color": "#1d4ed8"},
         )
         note = {
-            "Pratt": "Diagonals highlighted green",
+            "Pratt": "Diagonals: green",
             "Warren": "Alternating triangular web",
-            "Howe": "Opposite diagonal direction",
+            "Howe": "Diagonals slope opposite Pratt",
         }[title]
         fig.add_annotation(
             x=offset + 1.5, y=-0.48, text=note, showarrow=False,
             font={"size": 9, "color": "#475569"},
         )
-
-    add_panel("Pratt", offset_pratt, "Pratt")
-    add_panel("Warren", offset_warren, "Warren")
-    add_panel("Howe", offset_howe, "Howe")
     return _layout(
         fig, "Compare common planar truss configurations", height=365,
         x_range=(-0.55, 12.95), y_range=(-0.62, 1.38), equal_scale=False,
@@ -547,7 +536,7 @@ def _sections_figure() -> go.Figure:
 
 
 def _determinacy_figure() -> go.Figure:
-    """Topic 5: compare stable determinate, redundant and unstable topologies."""
+    """Topic 5: compare determinate, redundant and unstable four-joint trusses."""
     fig = go.Figure()
     cases = [
         (0.0, "DETERMINATE", "#15803d", "One diagonal", "m + r = 2j"),
@@ -560,8 +549,8 @@ def _determinacy_figure() -> go.Figure:
             "C": (offset + 2.0, 0.45), "D": (offset, 0.45),
         }
         for start, end, label in (
-            ("A","B","Bottom chord"), ("B","C","Right vertical"),
-            ("C","D","Top chord"), ("D","A","Left vertical"),
+            ("A", "B", "Bottom chord"), ("B", "C", "Right vertical"),
+            ("C", "D", "Top chord"), ("D", "A", "Left vertical"),
         ):
             _add_member(fig, nodes, start, end, f"{title}: {label}", width=2.7)
         if title != "UNSTABLE":
@@ -571,7 +560,7 @@ def _determinacy_figure() -> go.Figure:
             _add_member(fig, nodes, "B", "D", "Redundant diagonal BD",
                         color="#d97706", width=3.3)
         _add_supports(fig, nodes, ("A", "B"))
-        _add_nodes(fig, {f"{name}{int(offset)}": point for name, point in nodes.items()})
+        _add_nodes(fig, nodes)
         fig.add_annotation(
             x=offset + 1.0, y=1.23,
             text=f"<b>{title}</b><br>{formula}<br>{subtitle}",
@@ -615,9 +604,9 @@ def _optimization_figure() -> go.Figure:
     _add_force_arrow(fig, (2.8, 2.18), (2.8, 1.70), "P₂",
                      label_position=(3.02, 2.00))
     fig.add_annotation(
-        x=2.0, y=0.93, text="<b>CD: added load path</b>",
+        x=2.0, y=1.64, text="<b>CD — added member</b>",
         showarrow=False, font={"size": 10, "color": "#b91c1c"},
-        bgcolor="#fff1f2", bordercolor="#fda4af", borderpad=3,
+        bgcolor="#fff1f2", bordercolor="#fda4af", borderpad=2,
     )
     return _layout(
         fig, "Optimization topology — added member CD in red", height=415,

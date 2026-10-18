@@ -898,7 +898,22 @@ def page_reference():
 | m + r < 2j | ❌ Unstable (mechanism) |
 | m + r > 2j | ⚠️ Statically indeterminate |
 """)
-    st.caption("m = members · r = reaction components · j = joints")
+    st.caption("m = members · r = independent reaction components · j = joints")
+    st.caption(
+        "The count is only a first check. Geometric stability and independent "
+        "support constraints must also be verified."
+    )
+
+    st.subheader("Effect on Optimization")
+    st.markdown("""
+| Design behavior | Determinate truss | Indeterminate truss |
+|-----------------|-------------------|---------------------|
+| Ideal member forces | Fixed by equilibrium for the same geometry and loads | Depend on equilibrium plus compatibility and member stiffness |
+| Changing area | Changes stress, stiffness and displacement | Can also redistribute internal forces |
+| Extra member | Not applicable to the chosen topology | Adds a load path, material and design variables; may improve stiffness |
+| Optimization result | Area sizing cannot redistribute ideal member forces | Stiffness redistribution may help, but lower weight is not guaranteed |
+""")
+    st.markdown(r"Material-volume objective: $V = \\sum_i L_i A_i$")
 
     st.subheader("Method of Joints")
     st.markdown("""

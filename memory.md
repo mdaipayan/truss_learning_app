@@ -40,7 +40,8 @@ The app teaches:
 
 ### Key file responsibilities
 
-- main.py: page configuration, global CSS, navigation, tutorial rendering, app pages and live-state integration for Home.
+- main.py: page configuration, global CSS, navigation, Home/Learn route integration, and app pages.
+- learn.py: responsive tutorial layout, Plotly topic diagrams, formula cards, assumptions, navigation buttons, and injected completion callback.
 - home.py: reusable responsive landing dashboard with hero CTA, live gamification metrics, module cards, scoped CSS and injected router callback.
 - questions.py: tutorial content and quiz question bank.
 - game.py: progress, XP, levels, achievements, progress load/save.
@@ -198,3 +199,11 @@ Append a dated entry with:
 - Added tests/test_home.py and raised the Streamlit minimum version to 1.41.0 for keyed container CSS classes.
 - Mobile/desktop visual verification is not complete; automated CI status for the final commit should be checked before release.
 - No merge or deployment performed.
+
+
+### 2026-10-18 — Interactive Learn page
+- Added learn.py with Plotly diagrams for all six tutorial topics, hover metadata for joint coordinates/member labels, responsive theory/visualization layout, LaTeX formula cards, assumptions expander, and previous/next/mark-read controls.
+- Integrated learn.render_learn() into main.py and preserved the sixth-topic optimization-lab renderer. XP award, achievement checks, saving, and reruns remain in main.py callbacks.
+- Added tests/test_learn.py and removed the obsolete static tutorial diagram list from main.py.
+- CI for this change must be read at the final documentation-updated head before claiming the last commit is verified.
+- Actual browser/mobile visual checks are still outstanding; no deployment performed.

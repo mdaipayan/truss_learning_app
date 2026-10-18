@@ -6,7 +6,7 @@ import numpy as np
 import streamlit as st
 import pandas as pd
 
-import game, diagrams, dsm_solver, optimization_lab, solver as slv
+import game, diagrams, dsm_solver, home, optimization_lab, solver as slv
 from questions import TUTORIALS, QUESTIONS
 
 # ── Page config ───────────────────────────────────────────────────────────────
@@ -342,48 +342,28 @@ st.session_state.toasts = []
 # ── Home ──────────────────────────────────────────────────────────────────────
 
 def page_home():
-    g   = gs()
-    lv  = game.get_level(g["xp"])
+    """Adapter from the application state/router into the reusable Home module."""
+    g = gs()
+    level = game.get_level(g["xp"])
+    xp_in_band, band_size = game.xp_to_next_level(g["xp"])
 
-    st.title("🔺 Truss Learning App")
-    st.subheader("Master structural analysis — one concept at a time.")
-    st.write("")
-
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Level",       f'{lv["icon"]} {lv["name"]}')
-    c2.metric("Total XP",    g["xp"])
-    c3.metric("Tutorials",   f'{len(g["tutorials_read"])}/{len(TUTORIALS)}')
-    c4.metric("Accuracy",    f'{(g["total_correct"]/g["total_answered"]*100):.0f}%'
-              if g["total_answered"] else "—")
-
-    st.write("")
-
-    panels = [
-        ("📖", "Learn",          "tutorials",
-         f"{len(TUTORIALS)} illustrated tutorials with engineering-quality diagrams. **+15 XP** each."),
-        ("🔧", "Solve",          "solve",
-         "Step-by-step interactive solver — fill in each unknown and check your answer."),
-        ("🧮", "Stiffness Method","dsm",
-         "Build the global **K** matrix, apply BCs, and solve for displacements."),
-        ("⚔️", "Challenge",      "quiz_menu",
-         f"{len(QUESTIONS)} quiz questions, streaks & XP bonuses. **+20 XP** per correct answer."),
-    ]
-
-    cols = st.columns(4)
-    for col, (icon, lbl, pg, desc) in zip(cols, panels):
-        with col:
-            st.markdown(f"#### {icon} {lbl}")
-            st.caption(desc)
-            if st.button(f"Open →", key=f"h_{pg}", use_container_width=True):
-                go(pg)
-
-    st.divider()
-    st.markdown("#### Level Roadmap")
-    cols2 = st.columns(len(game.LEVELS))
-    for col, lv_info in zip(cols2, game.LEVELS):
-        done = g["xp"] >= lv_info["min_xp"]
-        col.markdown(f"**{lv_info['icon']} {lv_info['name']}**")
-        col.caption(f"{'✅' if done else '🔒'} {lv_info['min_xp']} XP")
+    progress = {
+        "rank": level["name"],
+        "xp_current": xp_in_band,
+        "xp_required": band_size,
+        "total_xp": g["xp"],
+        # This app tracks consecutive correct quiz answers, not calendar days.
+        "streak": st.session_state.streak,
+        "streak_unit": "correct in a row",
+        "achievements_unlocked": len(g["unlocked"]),
+        "achievements_total": len(game.ACHIEVEMENTS),
+    }
+    home.render_home(
+        progress=progress,
+        navigate=go,
+        tutorial_count=len(TUTORIALS),
+        quiz_count=len(QUESTIONS),
+    )
 
 
 # ── Tutorials ─────────────────────────────────────────────────────────────────

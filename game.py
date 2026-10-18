@@ -1,8 +1,11 @@
 """Game state: XP, levels, achievements, persistence."""
-import json, os
+import hashlib
+import json
+import os
 from typing import Set, List
 
-SAVE_FILE = "/tmp/truss_save.json"
+SAVE_DIR = "/tmp"
+SAVE_PREFIX = "truss_save_"
 
 LEVELS = [
     {"name": "Novice",       "icon": "🔩", "min_xp": 0},
@@ -49,10 +52,17 @@ def _make_state():
     }
 
 
-def load() -> dict:
-    if os.path.exists(SAVE_FILE):
+def _save_path(session_key: str) -> str:
+    """Return a per-session path; never share one progress file across students."""
+    digest = hashlib.sha256(str(session_key).encode("utf-8")).hexdigest()[:24]
+    return os.path.join(SAVE_DIR, f"{SAVE_PREFIX}{digest}.json")
+
+
+def load(session_key: str = "default") -> dict:
+    save_file = _save_path(session_key)
+    if os.path.exists(save_file):
         try:
-            with open(SAVE_FILE) as f:
+            with open(save_file) as f:
                 data = json.load(f)
             # Ensure all keys exist (forward compat)
             base = _make_state()
@@ -63,12 +73,16 @@ def load() -> dict:
     return _make_state()
 
 
-def save(state: dict):
+def save(state: dict, session_key: str = "default"):
+    """Persist state in a session-specific file and report failures to logs."""
+    import logging
+    save_file = _save_path(session_key)
     try:
-        with open(SAVE_FILE, "w") as f:
+        with open(save_file, "w", encoding="utf-8") as f:
             json.dump(state, f)
-    except Exception:
-        pass
+    except OSError:
+        logging.exception("Unable to save truss-learning progress to %s", save_file)
+        raise
 
 
 def get_level(xp: int) -> dict:
@@ -97,7 +111,14 @@ def xp_to_next_level(xp: int) -> tuple[int, int]:
     return xp - current_min, next_min - current_min
 
 
-def check_achievements(state: dict, streak: int, quiz_topic: str | None, quiz_total: int | None) -> list[dict]:
+def check_achievements(
+    state: dict,
+    streak: int,
+    quiz_topic: str | None,
+    quiz_total: int | None,
+    current_correct: int | None = None,
+    current_total: int | None = None,
+) -> list[dict]:
     """Return list of newly unlocked achievements (with xp) given updated state."""
     already = set(state["unlocked"])
     new = []
@@ -125,7 +146,9 @@ def check_achievements(state: dict, streak: int, quiz_topic: str | None, quiz_to
         _unlock("full_quiz")
     if quiz_topic not in (None, "All topics") and quiz_total is not None:
         _unlock("topic_quiz")
-    if quiz_total is not None and state["total_correct"] == state["total_answered"]:
+    # A perfect score is a property of this quiz, not lifetime statistics.
+    if (current_total is not None and current_total > 0
+            and current_correct == current_total):
         _unlock("perfect_score")
 
     state["unlocked"] = list(already)

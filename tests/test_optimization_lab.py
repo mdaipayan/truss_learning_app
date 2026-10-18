@@ -78,7 +78,7 @@ class TrussOptimizationTests(unittest.TestCase):
             response, redundant=True, show_deflected=True, exaggeration=50
         )
         self.assertEqual(len(original.data), len(response["members"]) + 1)
-        self.assertEqual(len(deformed.data), len(response["members"]) + 2)
+        self.assertEqual(len(deformed.data), 2 * len(response["members"]) + 2)
 
     def test_member_report_has_utilization(self):
         response = lab.solve_design(redundant=True)

@@ -45,6 +45,10 @@ Use this checklist as the implementation roadmap for the AI coding assistant. Ch
 
 ## Phase 3 — Responsive UI and accessibility
 
+- [x] Extract the Home dashboard into reusable home.py with an injected navigation callback and live progress data.
+- [x] Add the hero CTA, gamification metrics, XP progress bar, four module cards, and scoped card/hover CSS.
+- [x] Add unit tests for Home defaults, live progress normalization, safe metric values and route mapping.
+- [x] Require a Streamlit version with keyed containers for component-scoped CSS.
 - [x] Keep Streamlit's wide page layout.
 - [x] Add a CSS breakpoint at 768px to wrap/stack horizontal content and reduce mobile padding.
 - [x] Add mobile styles for metric values, table containment, touch targets, tab overflow and wrapping radio groups.

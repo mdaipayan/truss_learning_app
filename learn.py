@@ -393,12 +393,12 @@ def _types_figure() -> go.Figure:
             "Howe": "Diagonals slope opposite Pratt",
         }[title]
         fig.add_annotation(
-            x=offset + 1.5, y=-0.48, text=note, showarrow=False,
+            x=offset + 1.5, y=-0.66, text=note, showarrow=False,
             font={"size": 9, "color": "#475569"},
         )
     return _layout(
         fig, "Compare common planar truss configurations", height=365,
-        x_range=(-0.55, 12.95), y_range=(-0.62, 1.38), equal_scale=False,
+        x_range=(-0.55, 12.95), y_range=(-0.84, 1.38), equal_scale=False,
     )
 
 
@@ -539,9 +539,9 @@ def _determinacy_figure() -> go.Figure:
     """Topic 5: compare determinate, redundant and unstable four-joint trusses."""
     fig = go.Figure()
     cases = [
-        (0.0, "DETERMINATE", "#15803d", "One diagonal", "m + r = 2j"),
-        (3.0, "INDETERMINATE", "#b45309", "Two diagonals", "m + r > 2j"),
-        (6.0, "UNSTABLE", "#b91c1c", "No diagonal", "m + r < 2j"),
+        (0.0, "DETERMINATE", "#15803d", "m=5, r=3, j=4", "m+r=2j (8=8)"),
+        (3.0, "INDETERMINATE", "#b45309", "m=6, r=3, j=4", "m+r>2j (9>8)"),
+        (6.0, "UNSTABLE", "#b91c1c", "m=4, r=3, j=4", "m+r<2j (7<8)"),
     ]
     for offset, title, color, subtitle, formula in cases:
         nodes = {

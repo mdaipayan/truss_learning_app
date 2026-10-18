@@ -81,6 +81,41 @@ LEARN_CSS = r"""
 }
 .st-key-learn_page [data-testid="stPlotlyChart"] { max-width:100%; }
 .st-key-learn_page .learn-muted { color:#64748b; font-size:.83rem; line-height:1.5; }
+
+/* Theory text uses semantic emphasis rather than a single flat text style. */
+.st-key-learn_theory_panel .learn-concept {
+  color:#0369a1; font-weight:800;
+}
+.st-key-learn_theory_panel mark.learn-highlight {
+  color:#713f12; background:#fef08a; font-weight:750;
+  padding:.06rem .22rem; border-radius:.25rem;
+  border-bottom:2px solid #f59e0b;
+}
+.st-key-learn_theory_panel .learn-positive {
+  color:#166534; background:#dcfce7; font-weight:750;
+  padding:.04rem .2rem; border-radius:.25rem;
+}
+.st-key-learn_theory_panel .learn-warning {
+  color:#991b1b; background:#fee2e2; font-weight:750;
+  padding:.04rem .2rem; border-radius:.25rem;
+}
+.st-key-learn_theory_panel .learn-equation {
+  color:#1d4ed8; background:#eff6ff; font-weight:800;
+  padding:.06rem .24rem; border-radius:.3rem; white-space:normal;
+}
+.st-key-learn_theory_panel h4 {
+  color:#164e63; background:#ecfeff;
+  border-left:4px solid #0891b2; border-radius:0 8px 8px 0;
+  padding:.42rem .62rem; margin:1.05rem 0 .55rem;
+  font-size:1rem; line-height:1.4;
+}
+.st-key-learn_theory_panel [data-testid="stMarkdownContainer"] ul,
+.st-key-learn_theory_panel [data-testid="stMarkdownContainer"] ol {
+  padding-left:1.35rem; margin-top:.28rem; margin-bottom:.65rem;
+}
+.st-key-learn_theory_panel [data-testid="stMarkdownContainer"] li {
+  padding-left:.12rem; margin-bottom:.32rem; line-height:1.58;
+}
 @media (max-width:768px) {
   .st-key-learn_page [data-testid="stHorizontalBlock"] {
     display:flex !important; flex-wrap:wrap !important; align-items:stretch !important;
@@ -101,39 +136,94 @@ LEARN_CSS = r"""
 
 
 def _clean_content(text: str) -> str:
-    """Convert legacy content markup to Markdown without leaving equations unformatted."""
+    """Turn legacy tutorial markup into accessible, semantically highlighted Markdown."""
+    # Legacy tags carry meaning: cyan = concept, yellow = highlight, green = positive,
+    # red = warning/compression, and bold = a short emphasis or subsection label.
+    styled_patterns = (
+        (r"\[bold\s+cyan\](.*?)\[/bold\s+cyan\]", '<span class="learn-concept">', "</span>"),
+        (r"\[yellow\](.*?)\[/yellow\]", '<mark class="learn-highlight">', "</mark>"),
+        (r"\[green\](.*?)\[/green\]", '<span class="learn-positive">', "</span>"),
+        (r"\[red\](.*?)\[/red\]", '<span class="learn-warning">', "</span>"),
+        (r"\[bold\](.*?)\[/bold\]", "**", "**"),
+    )
+    for pattern, opening, closing in styled_patterns:
+        text = re.sub(
+            pattern,
+            lambda match, start=opening, finish=closing:
+                f"{start}{match.group(1)}{finish}",
+            text,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+
+    # Remove any unrecognized legacy markup without touching the HTML added above.
     text = re.sub(r"\[/?[^\]]+\]", "", text).strip()
 
-    # Formula cards display these equations with st.latex; keep prose in the body.
-    text = text.replace("m + r = 2j", "the determinate-count condition")
-    text = text.replace("m + r < 2j", "the count indicates insufficient constraints")
-    text = text.replace("m + r > 2j", "the count indicates indeterminacy")
-    text = text.replace("ΣFx=0, ΣFy=0, ΣM=0", "force and moment equilibrium")
-    text = text.replace("ΣFx = 0, ΣFy = 0, ΣM = 0", "force and moment equilibrium")
-    text = text.replace("ΣFx=0, ΣFy=0", "horizontal and vertical force equilibrium")
-    text = text.replace("ΣFx = 0 and ΣFy = 0", "horizontal and vertical force equilibrium")
-    text = text.replace("ΣFx = 0", "horizontal force equilibrium")
-    text = text.replace("ΣFy = 0", "vertical force equilibrium")
+    # Keep the example mathematically readable while removing the old terminal glyphs.
     text = re.sub(
         r"Example: A simple triangular truss with pin \+ roller support:\s*"
         r"m = 3, r = 3, j = 3\s*→\s*3 \+ 3 = 2\(3\) = 6\s*✓ Determinate",
-        "Example: A simple triangular truss with three members and three reactions meets the determinate counting condition.",
+        "Example: A simple triangular truss with pin and roller support has "
+        "m = 3, r = 3 and j = 3. Hence m + r = 2j = 6: determinate by count.",
         text,
         flags=re.IGNORECASE,
     )
-    text = text.replace("Minimize material volume: V = Σ(Lᵢ Aᵢ)",
-                        "Minimize material volume based on member lengths and areas.")
-    text = text.replace("subject to limits such as |σᵢ| ≤ σ_allow and δ_max ≤ δ_allow.",
-                        "subject to axial-stress and displacement limits.")
-    output = []
+
+    # Highlight equations and checks wherever they occur in the explanation.
+    equation_pattern = (
+        r"(?<![A-Za-z])(?:m\s*\+\s*r\s*(?:=|<|>)\s*2j"
+        r"|ΣF[xXyY]\s*=\s*0|ΣM\s*=\s*0"
+        r"|V\s*=\s*Σ\(Lᵢ\s*Aᵢ\)|EA\s*/\s*L)"
+    )
+
+    def _equation_span(match: re.Match[str]) -> str:
+        equation = match.group(0).replace("<", "&lt;").replace(">", "&gt;")
+        return f'<span class="learn-equation">{equation}</span>'
+
+    text = re.sub(equation_pattern, _equation_span, text)
+
+    headings = {
+        "key properties": "🔑 Key properties",
+        "common uses": "🏗️ Common applications",
+        "steps": "🧭 Step-by-step method",
+        "tips": "💡 Important tips",
+        "when to use it": "🎯 When to use this method",
+        "choosing the moment point": "🎯 Choosing the moment point",
+        "the determinacy equation": "📐 Determinacy check",
+        "determinacy equation": "📐 Determinacy check",
+        "geometric instability": "⚠️ Geometric stability",
+        "important scope note": "⚠️ Model limitations",
+    }
+
+    output: list[str] = []
     for raw_line in text.splitlines():
-        line = raw_line.strip()
-        if line.startswith("• "):
-            line = "- " + line[2:]
-        if not line:
+        if not raw_line.strip():
             output.append("")
             continue
+
+        # Preserve a small amount of indentation so genuinely nested bullet points
+        # remain nested, while avoiding Markdown's four-space code-block behavior.
+        indent = len(raw_line) - len(raw_line.lstrip(" "))
+        line = raw_line.strip()
+
+        # Recognize both legacy-bold headers and ordinary "Heading:" lines.
+        header_candidate = re.sub(r"^\*\*(.*?)\*\*:?$", r"\1", line).strip().rstrip(":")
+        header_key = header_candidate.casefold()
+        if header_key in headings:
+            output.append(f"#### {headings[header_key]}")
+            continue
+
+        if line.startswith("• "):
+            prefix = "  " if indent >= 4 else ""
+            line = f"{prefix}- {line[2:].strip()}"
+        elif re.match(r"^-\s+", line):
+            prefix = "  " if indent >= 4 else ""
+            line = prefix + line
+        elif re.match(r"^\d+\.\s+", line):
+            prefix = "  " if indent >= 4 else ""
+            line = prefix + line
+
         output.append(line)
+
     return "\n".join(output)
 
 
@@ -696,7 +786,12 @@ def render_learn(
         with theory_col:
             with st.container(key="learn_theory_panel"):
                 st.markdown("#### 📘 Theory")
-                st.markdown(_clean_content(str(tutorial.get("content", ""))))
+                # Content is sourced from the app's authored tutorial bank; semantic
+                # emphasis tags are generated by _clean_content and styled by LEARN_CSS.
+                st.markdown(
+                    _clean_content(str(tutorial.get("content", ""))),
+                    unsafe_allow_html=True,
+                )
                 _render_formula_cards(title)
                 if index == 0:
                     st.info(

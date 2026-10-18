@@ -249,7 +249,11 @@ def optimize_design(
             constraints=constraint_spec,
             options={"maxiter": 300, "ftol": 1e-8, "disp": False},
         )
-        if np.min(margins(retry.x)) > np.min(margins(result.x)):
+        current_feasible = bool(np.min(margins(result.x)) >= -1e-3)
+        retry_feasible = bool(np.min(margins(retry.x)) >= -1e-3)
+        if retry_feasible and (
+            not current_feasible or (retry.success and retry.fun < result.fun)
+        ):
             result = retry
 
     design = _solve(result.x, members, load_each_kN)
@@ -557,6 +561,28 @@ def render_lab():
             }),
             use_container_width=True,
             hide_index=True,
+        )
+
+        force_view = st.radio(
+            "Inspect the current force map",
+            ["Determinate", "Redundant (current CD setting)"],
+            horizontal=True,
+            key="detopt_sensitivity_force_view",
+        )
+        view_is_redundant = force_view.startswith("Redundant")
+        view_response = ind if view_is_redundant else det
+        view_fig = plot_truss_plotly(
+            view_response,
+            redundant=view_is_redundant,
+            show_deflected=False,
+            allowable_stress_mpa=allowable,
+            title=f"{force_view} — current what-if setting",
+        )
+        st.plotly_chart(
+            view_fig,
+            use_container_width=True,
+            config={"responsive": True, "displaylogo": False},
+            key="detopt_sensitivity_force_plot",
         )
 
         with st.expander("Why the slider changes force sharing", expanded=False):

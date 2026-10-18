@@ -142,6 +142,74 @@ html, body, [data-testid="stAppViewContainer"] {
 </style>
 """, unsafe_allow_html=True)
 
+# ── Responsive layout: scoped to the app's main content ──────────────────────
+st.markdown("""
+<style>
+/* Desktop retains the existing columns; only narrow viewports stack them. */
+@media (max-width: 768px) {
+    .main .block-container {
+        padding: 1rem 0.75rem 2rem !important;
+        max-width: 100% !important;
+    }
+    .main [data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+        width: 100% !important;
+    }
+    .main [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    .main [data-testid="stMetric"] {
+        min-width: 0 !important;
+        padding: 0.65rem 0.75rem !important;
+        overflow-wrap: anywhere !important;
+    }
+    .main [data-testid="stMetricValue"] {
+        font-size: clamp(1.2rem, 6vw, 1.8rem) !important;
+        overflow-wrap: anywhere !important;
+    }
+    .main [data-testid="stDataFrame"],
+    .main [data-testid="stTable"],
+    .main .stPlotlyChart,
+    .main .stImage {
+        max-width: 100% !important;
+    }
+    .main [data-testid="stDataFrame"] {
+        overflow-x: auto !important;
+    }
+    .main button,
+    .main [role="slider"],
+    .main input,
+    .main [data-baseweb="select"] {
+        min-height: 42px;
+    }
+    .main [data-testid="stMarkdownContainer"],
+    .main p,
+    .main li,
+    .main label {
+        overflow-wrap: anywhere;
+        word-break: normal;
+    }
+    .main [data-testid="stTabs"] [data-baseweb="tab-list"] {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        max-width: 100% !important;
+    }
+    .main [data-testid="stTabs"] [data-baseweb="tab"] {
+        flex-shrink: 0 !important;
+        min-height: 44px !important;
+        white-space: nowrap !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ── Session-state init ────────────────────────────────────────────────────────
 
 def _init():

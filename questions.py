@@ -147,9 +147,6 @@ identical axial-stress and displacement limits.
 It does not check member buckling, connections, fabrication, load combinations,
 or code compliance. Its sizes are not for direct use in a real structure.""",
     },
-]
-
-
     {
         "title": "Determinate Truss: Force, Stress and Displacement",
         "content": """This lesson follows the uploaded study notes on a three-member 3–4–5 plane truss.
@@ -236,6 +233,7 @@ Minimum-weight design may minimize W = ρg Σ A_i L_i subject to stress and disp
 
 Students should be able to inspect the selected redundant, primary forces, unit-load forces, flexibility terms, compatibility equation, force recovery and the way area changes the response.""",
     },
+]
 
 QUESTIONS = [
     # Topic: Basics

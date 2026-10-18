@@ -66,11 +66,46 @@ class LearnPageTests(unittest.TestCase):
             learn.FORMULAS["Determinacy and Truss Optimization"],
         )
 
-    def test_legacy_content_tags_and_bullets_clean_up(self):
-        source = "[bold cyan]A truss[/bold cyan]\n\nKey properties:\n  • Members carry axial forces"
+    def test_legacy_markup_becomes_semantic_color_highlights(self):
+        source = (
+            "[bold cyan]Truss member[/bold cyan] carries "
+            "[yellow]axial force[/yellow]. "
+            "[green]Tension[/green] is positive; "
+            "[red]compression[/red] is negative."
+        )
         cleaned = learn._clean_content(source)
-        self.assertNotIn("[bold", cleaned)
-        self.assertIn("- Members carry axial forces", cleaned)
+        self.assertIn('<span class="learn-concept">Truss member</span>', cleaned)
+        self.assertIn('<mark class="learn-highlight">axial force</mark>', cleaned)
+        self.assertIn('<span class="learn-positive">Tension</span>', cleaned)
+        self.assertIn('<span class="learn-warning">compression</span>', cleaned)
+        self.assertNotIn("[bold cyan]", cleaned)
+
+    def test_equations_are_highlighted_and_less_than_is_html_safe(self):
+        cleaned = learn._clean_content("The count rule is m + r < 2j.")
+        self.assertIn('<span class="learn-equation">m + r &lt; 2j</span>', cleaned)
+
+    def test_section_labels_become_headings_and_bullets_remain_bullets(self):
+        source = (
+            "Steps:\\n"
+            "  1. Find support reactions.\\n"
+            "  2. Start at a joint.\\n"
+            "Key properties:\\n"
+            "  • Loads act at joints."
+        )
+        cleaned = learn._clean_content(source)
+        self.assertIn("#### 🧭 Step-by-step method", cleaned)
+        self.assertIn("1. Find support reactions.", cleaned)
+        self.assertIn("#### 🔑 Key properties", cleaned)
+        self.assertIn("- Loads act at joints.", cleaned)
+
+    def test_theory_highlight_styles_are_scoped_and_defined(self):
+        for class_name in (
+            "learn-concept", "learn-highlight", "learn-positive",
+            "learn-warning", "learn-equation",
+        ):
+            self.assertIn(class_name, learn.LEARN_CSS)
+        self.assertIn(".st-key-learn_theory_panel h4", learn.LEARN_CSS)
+
 
     def test_mobile_css_is_scoped_and_includes_breakpoint(self):
         self.assertIn(".st-key-learn_page", learn.LEARN_CSS)

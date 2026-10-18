@@ -101,6 +101,50 @@ When to use it:
   arranged such that they cannot resist certain load directions.
   Always check geometry, not just the equation.""",
     },
+    {
+        "title": "Determinacy and Truss Optimization",
+        "content": """This topic connects **static determinacy** with the way we optimize a 2D truss.
+
+[bold cyan]1. Count first — then check stability[/bold cyan]
+  m = number of members; r = independent support-reaction components;
+  j = number of joints.
+
+  m + r = 2j  → determinate by count (if the truss is stable)
+  m + r > 2j  → indeterminate by count
+  m + r < 2j  → insufficient constraints by count; often a mechanism
+
+The count is a screening rule, not proof of stability. A poor member layout or
+incorrect supports can make a truss unstable even when m + r = 2j.
+
+[bold cyan]2. Why determinacy matters in optimization[/bold cyan]
+  [green]Determinate truss:[/green]
+  For a fixed geometry and external loading, equilibrium determines member forces.
+  Changing cross-sectional areas changes stress, stiffness and displacement, but
+  does not redistribute the ideal member forces.
+
+  [yellow]Indeterminate truss:[/yellow]
+  Equilibrium alone cannot determine every member force. Compatibility of
+  deformation and member stiffness (EA/L) are also needed. Changing one member's
+  area can redistribute forces to other members.
+
+[bold cyan]3. The optimization problem[/bold cyan]
+  Minimize material volume:  V = Σ(Lᵢ Aᵢ)
+  subject to limits such as |σᵢ| ≤ σ_allow and δ_max ≤ δ_allow.
+
+  Redundancy can provide alternative load paths and improve stiffness, giving an
+  optimizer extra ways to trade member sizes against displacement. But an extra
+  member also adds material and constraints: a redundant truss is not
+  automatically lighter or more economical.
+
+[bold cyan]4. Try the interactive experiment below[/bold cyan]
+Compare a five-member determinate layout with the same layout plus member CD.
+The lab shows the determinacy count, force redistribution as area changes, and
+the minimum-volume design under identical axial-stress and displacement limits.
+
+[bold]Important scope note:[/bold] the lab is an educational linear-elastic model.
+It does not check member buckling, connections, fabrication, load combinations,
+or code compliance. Its sizes are not for direct use in a real structure.""",
+    },
 ]
 
 QUESTIONS = [
@@ -283,4 +327,55 @@ QUESTIONS = [
         "explanation": "The ideal truss assumption requires loads at joints only. Distributed loads are "
                        "converted to statically equivalent concentrated forces at the panel points (joints).",
     },
+
+    # Topic: Determinacy & Optimization
+    {
+        "topic": "Determinacy & Optimization",
+        "question": "For a stable, statically determinate truss, what happens to its ideal member-force distribution when only the member areas change?",
+        "options": [
+            "The force distribution remains fixed for the same geometry and external loading",
+            "Every member force becomes proportional to its area",
+            "All member forces become zero",
+            "Only the support reactions change with area",
+        ],
+        "answer": 0,
+        "explanation": "In a statically determinate truss, equilibrium determines the forces. Changing areas affects stress, stiffness and displacement, but not the ideal equilibrium force distribution.",
+    },
+    {
+        "topic": "Determinacy & Optimization",
+        "question": "In an indeterminate truss, what additional information is needed to determine how forces are shared between members?",
+        "options": [
+            "Only the number of joints",
+            "Compatibility of deformation and member stiffness such as EA/L",
+            "Only the density of steel",
+            "Only the total truss weight",
+        ],
+        "answer": 1,
+        "explanation": "Redundant member forces depend on equilibrium plus deformation compatibility and relative member stiffness. Changing member areas can therefore redistribute internal forces.",
+    },
+    {
+        "topic": "Determinacy & Optimization",
+        "question": "What is the most accurate statement about adding a redundant member during truss optimization?",
+        "options": [
+            "It always reduces the optimum weight",
+            "It always makes every member force smaller",
+            "It creates another load path but does not guarantee a lighter optimum",
+            "It makes displacement independent of member areas",
+        ],
+        "answer": 2,
+        "explanation": "Redundancy can improve stiffness and permit force redistribution, but the added member also consumes material. The optimum depends on geometry, loads and constraints.",
+    },
+    {
+        "topic": "Determinacy & Optimization",
+        "question": "A plane truss has m = 6 members, r = 3 reaction components and j = 4 joints. What does the count m + r − 2j indicate?",
+        "options": [
+            "One degree of static indeterminacy by count",
+            "A determinate truss",
+            "An unstable truss by count because the result is positive",
+            "Two degrees of static indeterminacy",
+        ],
+        "answer": 0,
+        "explanation": "m + r − 2j = 6 + 3 − 2(4) = 1. Assuming geometric stability and independent supports, this indicates one degree of static indeterminacy by count.",
+    },
+
 ]

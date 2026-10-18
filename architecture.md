@@ -34,6 +34,7 @@ The project uses top-level Python modules. Keep this layout unless there is a cl
     ├── tests/
     │   └── test_optimization_lab.py
     ├── main.py                 # Streamlit entry point, navigation, global UI
+    ├── home.py                 # Reusable responsive Home dashboard
     ├── questions.py            # Tutorial text and quiz question bank
     ├── game.py                 # XP, achievements, quiz/tutorial progress
     ├── diagrams.py             # Matplotlib structural and educational diagrams
@@ -50,7 +51,8 @@ The project uses top-level Python modules. Keep this layout unless there is a cl
 
 ### Module boundaries
 
-- **main.py** owns Streamlit initialization, global responsive CSS, navigation, page-level composition, and the call to optimization_lab.render_lab() from the sixth tutorial. It should orchestrate, not contain a second copy of the optimization mathematics.
+- **main.py** owns Streamlit initialization, global responsive CSS, navigation, page-level composition, and connects live game state to the Home renderer. It calls optimization_lab.render_lab() from the sixth tutorial. It should orchestrate, not contain a second copy of the optimization mathematics.
+- **home.py** renders the landing dashboard: hero, CTA buttons, live rank/XP/streak/achievement cards, and module-navigation cards. It accepts a progress mapping and a required navigation callback, so it does not import or depend on main.py's router.
 - **questions.py** stores the TUTORIALS and QUESTIONS content. Avoid mixing solver algorithms or Streamlit callbacks into this content-only module.
 - **game.py** defines the progress schema, XP/levels, achievement rules, and progress load/save functions. Existing per-session temporary files do not provide durable identity-based student records.
 - **diagrams.py** creates Matplotlib teaching diagrams. Each function should return a Figure; callers display and then close it.
@@ -65,7 +67,9 @@ The project uses top-level Python modules. Keep this layout unless there is a cl
 
 1. main.py configures Streamlit and CSS.
 2. _init() initializes st.session_state.
-3. Sidebar navigation selects a page key.
+3. main.py's page_home() maps game state and quiz state to a progress mapping, then calls home.render_home(progress=..., navigate=go, ...).
+4. The Home module renders buttons; route requests are delegated to the callback rather than owning a second router.
+5. Sidebar navigation selects a page key.
 4. The Learn page selects a tutorial by index from TUTORIALS.
 5. The tutorial's static figure comes from DIAG_FNS; the sixth tutorial additionally calls optimization_lab.render_lab().
 6. Completing a tutorial or quiz updates game state, awards XP/achievements, and calls the save helper.

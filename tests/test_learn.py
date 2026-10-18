@@ -86,10 +86,10 @@ class LearnPageTests(unittest.TestCase):
 
     def test_section_labels_become_headings_and_bullets_remain_bullets(self):
         source = (
-            "Steps:\\n"
-            "  1. Find support reactions.\\n"
-            "  2. Start at a joint.\\n"
-            "Key properties:\\n"
+            "Steps:\n"
+            "  1. Find support reactions.\n"
+            "  2. Start at a joint.\n"
+            "Key properties:\n"
             "  • Loads act at joints."
         )
         cleaned = learn._clean_content(source)

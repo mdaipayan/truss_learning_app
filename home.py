@@ -437,7 +437,7 @@ def render_home(
         _render_hero(navigate)
         st.write("")
         _render_stats(stats)
-        _render_modules(navigate)
+        _render_module_grid(navigate)
         st.write("")
         st.markdown(
             f'<div class="home-footer-note">📚 {int(tutorial_count)} tutorials'

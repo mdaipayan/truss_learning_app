@@ -47,6 +47,7 @@ FORMULAS: dict[str, list[tuple[str, str]]] = {
         ("Determinate by count", r"m+r=2j"),
         ("Indeterminate by count", r"m+r>2j"),
         ("Insufficient constraints by count", r"m+r<2j"),
+        ("Simple triangular-truss example", r"m=3,\quad r=3,\quad j=3,\quad m+r=6=2j"),
     ],
     "Determinacy and Truss Optimization": [
         ("Material-volume objective", r"\min_{\{A_i\}} V=\sum_i L_iA_i"),
@@ -100,15 +101,38 @@ LEARN_CSS = r"""
 
 
 def _clean_content(text: str) -> str:
-    """Convert the legacy question-bank markup and bullet glyphs to Markdown."""
+    """Convert legacy content markup to Markdown without leaving equations unformatted."""
     text = re.sub(r"\[/?[^\]]+\]", "", text).strip()
+
+    # Formula cards display these equations with st.latex; keep prose in the body.
+    text = text.replace("m + r = 2j", "the determinate-count condition")
+    text = text.replace("m + r < 2j", "the count indicates insufficient constraints")
+    text = text.replace("m + r > 2j", "the count indicates indeterminacy")
+    text = text.replace("ΣFx=0, ΣFy=0, ΣM=0", "force and moment equilibrium")
+    text = text.replace("ΣFx = 0, ΣFy = 0, ΣM = 0", "force and moment equilibrium")
+    text = text.replace("ΣFx=0, ΣFy=0", "horizontal and vertical force equilibrium")
+    text = text.replace("ΣFx = 0 and ΣFy = 0", "horizontal and vertical force equilibrium")
+    text = text.replace("ΣFx = 0", "horizontal force equilibrium")
+    text = text.replace("ΣFy = 0", "vertical force equilibrium")
+    text = re.sub(
+        r"Example: A simple triangular truss with pin \+ roller support:\\s*"
+        r"m = 3, r = 3, j = 3\\s*→\\s*3 \\+ 3 = 2\\(3\\) = 6\\s*✓ Determinate",
+        "Example: A simple triangular truss with three members and three reactions meets the determinate counting condition.",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = text.replace("Minimize material volume: V = Σ(Lᵢ Aᵢ)",
+                        "Minimize material volume based on member lengths and areas.")
+    text = text.replace("subject to limits such as |σᵢ| ≤ σ_allow and δ_max ≤ δ_allow.",
+                        "subject to axial-stress and displacement limits.")
     output = []
-    for raw in text.splitlines():
-        line = raw.strip()
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
         if line.startswith("• "):
             line = "- " + line[2:]
-        if line.startswith(("m + r = 2j  →", "m + r < 2j  →", "m + r > 2j  →")):
-            continue  # These are rendered separately as LaTeX formulas.
+        if not line:
+            output.append("")
+            continue
         output.append(line)
     return "\n".join(output)
 

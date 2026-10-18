@@ -6,7 +6,7 @@ import numpy as np
 import streamlit as st
 import pandas as pd
 
-import game, diagrams, dsm_solver, solver as slv
+import game, diagrams, dsm_solver, optimization_lab, solver as slv
 from questions import TUTORIALS, QUESTIONS
 
 # ── Page config ───────────────────────────────────────────────────────────────
@@ -209,6 +209,7 @@ DIAG_FNS = [
     diagrams.diagram_method_joints,
     diagrams.diagram_method_sections,
     diagrams.diagram_determinacy,
+    diagrams.diagram_determinacy_optimization,
 ]
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
@@ -274,7 +275,7 @@ def page_home():
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Level",       f'{lv["icon"]} {lv["name"]}')
     c2.metric("Total XP",    g["xp"])
-    c3.metric("Tutorials",   f'{len(g["tutorials_read"])}/5')
+    c3.metric("Tutorials",   f'{len(g["tutorials_read"])}/{len(TUTORIALS)}')
     c4.metric("Accuracy",    f'{(g["total_correct"]/g["total_answered"]*100):.0f}%'
               if g["total_answered"] else "—")
 
@@ -282,13 +283,13 @@ def page_home():
 
     panels = [
         ("📖", "Learn",          "tutorials",
-         "5 illustrated tutorials with engineering-quality diagrams. **+15 XP** each."),
+         f"{len(TUTORIALS)} illustrated tutorials with engineering-quality diagrams. **+15 XP** each."),
         ("🔧", "Solve",          "solve",
          "Step-by-step interactive solver — fill in each unknown and check your answer."),
         ("🧮", "Stiffness Method","dsm",
          "Build the global **K** matrix, apply BCs, and solve for displacements."),
         ("⚔️", "Challenge",      "quiz_menu",
-         "13 quiz questions, streaks & XP bonuses. **+20 XP** per correct answer."),
+         f"{len(QUESTIONS)} quiz questions, streaks & XP bonuses. **+20 XP** per correct answer."),
     ]
 
     cols = st.columns(4)
@@ -315,8 +316,8 @@ def page_tutorials():
     st.title("📖 Illustrated Tutorials")
 
     topics  = [t["title"] for t in TUTORIALS]
-    sel     = st.radio("Select topic:", topics,
-                       index=st.session_state.tut_idx, horizontal=True)
+    sel     = st.selectbox("Select topic:", topics,
+                           index=st.session_state.tut_idx)
     idx     = topics.index(sel)
     st.session_state.tut_idx = idx
 
@@ -340,6 +341,8 @@ def page_tutorials():
     plt.close(fig)
 
     st.markdown(_strip(tut["content"]))
+    if idx == 5:
+        optimization_lab.render_lab()
     st.write("")
 
     cp, cm, cn = st.columns([1, 2, 1])

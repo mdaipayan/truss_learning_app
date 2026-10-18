@@ -1,6 +1,6 @@
 """Truss Learning App — gamified, light-theme Streamlit UI."""
 
-import random, re, uuid
+import random, uuid
 import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
